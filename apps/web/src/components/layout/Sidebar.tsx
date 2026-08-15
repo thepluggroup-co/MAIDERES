@@ -3,12 +3,9 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TafdilIcon } from '@/components/ui/Logo'
 import {
-  LayoutDashboard, Wrench, Package, ShoppingCart, FileText, DollarSign, Users,
-  GraduationCap, Kanban, Truck, Megaphone, Shield, Brain, Wifi,
-  Store, LogOut, ChevronLeft, ChevronRight, ChevronDown, Settings, Crown, Hammer, Building2,
+  LayoutDashboard, LogOut, ChevronLeft, ChevronRight, ChevronDown, Settings, Crown,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { useCommandesShop } from '@/hooks/useCommandesShop'
 
 type AppRole = 'admin' | 'superviseur' | 'operateur' | 'technicien'
 
@@ -17,7 +14,6 @@ interface NavItem {
   label: string
   icon: React.ElementType
   badge?: number
-  dynamicBadge?: boolean
   roles?: AppRole[]   // undefined = tous les rôles
 }
 
@@ -28,57 +24,12 @@ interface NavGroup {
   roles?: AppRole[]   // filtre le groupe entier si tous ses items sont cachés
 }
 
-const ALL: AppRole[] = ['admin', 'superviseur', 'operateur', 'technicien']
-const NO_TECHNICIEN: AppRole[] = ['admin', 'superviseur', 'operateur']
-const ADMIN_SUPERVISEUR: AppRole[] = ['admin', 'superviseur']
-
 const DASHBOARD_ITEM: NavItem = { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
 
-const NAV_GROUPS: NavGroup[] = [
-  {
-    id: 'activite',
-    label: 'Activité',
-    items: [
-      { path: '/boutique',     label: 'Boutique',     icon: Store, dynamicBadge: true, roles: ALL },
-      { path: '/production',   label: 'Production',   icon: Wrench,        roles: ALL },
-      { path: '/commandes',    label: 'Commandes',    icon: ShoppingCart,  roles: ALL },
-      { path: '/stocks',       label: 'Stocks',       icon: Package,       roles: ALL },
-      { path: '/fournisseurs', label: 'Fournisseurs', icon: Building2,     roles: ALL },
-    ],
-  },
-  {
-    id: 'commercial',
-    label: 'Commercial',
-    items: [
-      { path: '/devis',      label: 'Devis',      icon: FileText, roles: ALL },
-      { path: '/clients',    label: 'Clients',    icon: Users,    roles: ALL },
-      { path: '/logistique', label: 'Logistique', icon: Truck,    roles: ALL },
-    ],
-  },
-  {
-    id: 'gestion',
-    label: 'Gestion',
-    items: [
-      { path: '/finance',     label: 'Finance',     icon: DollarSign,   roles: ADMIN_SUPERVISEUR },
-      { path: '/rh',          label: 'RH',          icon: Users,        roles: ADMIN_SUPERVISEUR },
-      { path: '/formation',   label: 'Formation',   icon: GraduationCap, roles: NO_TECHNICIEN },
-      { path: '/equipements', label: 'Équipements', icon: Hammer,       roles: NO_TECHNICIEN },
-      { path: '/projets',     label: 'Projets',     icon: Kanban,       roles: ADMIN_SUPERVISEUR },
-    ],
-  },
-  {
-    id: 'pilotage',
-    label: 'Pilotage',
-    items: [
-      { path: '/intelligence', label: 'Intelligence', icon: Brain,    roles: ADMIN_SUPERVISEUR },
-      { path: '/marketing',    label: 'Marketing',    icon: Megaphone, roles: ADMIN_SUPERVISEUR },
-      { path: '/iot',          label: 'IoT',          icon: Wifi,     roles: NO_TECHNICIEN },
-      { path: '/securite',     label: 'Sécurité',     icon: Shield,   roles: ADMIN_SUPERVISEUR },
-    ],
-  },
-]
+// Les groupes métier (demandes, prestataires, matching...) sont ajoutés en Phase 3.
+const NAV_GROUPS: NavGroup[] = []
 
-const STORAGE_KEY = 'forge-sidebar-groups'
+const STORAGE_KEY = 'maideres-sidebar-groups'
 
 interface SidebarProps {
   collapsed: boolean
@@ -90,18 +41,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navigate  = useNavigate()
   const location  = useLocation()
 
-  const { data: shopData } = useCommandesShop()
-  const webBadge = shopData?.stats?.nouvelles_ce_jour ?? 0
-
   // ── Group open/close state — persisted in localStorage ──────────────────────
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      return saved
-        ? (JSON.parse(saved) as Record<string, boolean>)
-        : { activite: true, commercial: true, gestion: false, pilotage: false }
+      return saved ? (JSON.parse(saved) as Record<string, boolean>) : {}
     } catch {
-      return { activite: true, commercial: true, gestion: false, pilotage: false }
+      return {}
     }
   })
 
@@ -130,21 +76,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const currentRole = (appRole ?? 'technicien') as AppRole
 
-  // Inject admin item at bottom of Gestion group, then filter by role
-  const groups: NavGroup[] = NAV_GROUPS.map(g => {
-    const withAdmin = g.id === 'gestion' && appRole === 'admin'
-      ? { ...g, items: [...g.items, { path: '/admin', label: 'Administration', icon: Crown, roles: ['admin'] as AppRole[] }] }
-      : g
-    return {
-      ...withAdmin,
-      items: withAdmin.items.filter(item => !item.roles || item.roles.includes(currentRole)),
-    }
-  }).filter(g => g.items.length > 0)
+  // Inject admin item at bottom, then filter by role
+  const groups: NavGroup[] = NAV_GROUPS.map(g => ({
+    ...g,
+    items: g.items.filter(item => !item.roles || item.roles.includes(currentRole)),
+  })).filter(g => g.items.length > 0)
 
-  const resolveItem = (item: NavItem): NavItem =>
-    item.dynamicBadge && item.path === '/boutique'
-      ? { ...item, badge: webBadge > 0 ? webBadge : undefined }
-      : item
+  const adminItem: NavItem | null = appRole === 'admin'
+    ? { path: '/admin', label: 'Administration', icon: Crown, roles: ['admin'] }
+    : null
 
   const email       = user?.email ?? ''
   const displayName = authName ?? user?.email?.split('@')[0] ?? 'Utilisateur'
@@ -164,9 +104,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   }
 
   const renderItem = (item: NavItem) => {
-    const resolved = resolveItem(item)
     return (
-      <NavLink key={resolved.path} to={resolved.path} title={collapsed ? resolved.label : undefined}>
+      <NavLink key={item.path} to={item.path} title={collapsed ? item.label : undefined}>
         {({ isActive }) => (
           <motion.div
             whileHover={{ scale: 1.02 }}
@@ -179,11 +118,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(198,40,40,0.2)' }}
             onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = 'transparent' }}
           >
-            <resolved.icon className="shrink-0" style={{ width: 18, height: 18 }} />
+            <item.icon className="shrink-0" style={{ width: 18, height: 18 }} />
             {!collapsed && (
-              <span className="text-sm font-medium truncate flex-1">{resolved.label}</span>
+              <span className="text-sm font-medium truncate flex-1">{item.label}</span>
             )}
-            {resolved.badge !== undefined && resolved.badge > 0 && (
+            {item.badge !== undefined && item.badge > 0 && (
               <span
                 className={`flex items-center justify-center rounded-full text-white text-xs font-bold shrink-0 ${
                   collapsed ? 'absolute -top-1 -right-1 w-4 h-4 text-[10px]' : 'w-5 h-5'
@@ -193,7 +132,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   minWidth: collapsed ? 16 : 20,
                 }}
               >
-                {resolved.badge > 99 ? '99+' : resolved.badge}
+                {item.badge > 99 ? '99+' : item.badge}
               </span>
             )}
           </motion.div>
@@ -220,9 +159,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             className="min-w-0"
           >
             <div className="text-white font-bold text-base leading-none">
-              <span style={{ color: '#C62828' }}>FOR</span>GE
+              <span style={{ color: '#C62828' }}>MAI</span>DERES
             </div>
-            <div className="text-white/40 text-xs mt-0.5 leading-none">ERP · TAFDIL</div>
+            <div className="text-white/40 text-xs mt-0.5 leading-none">Console opérations</div>
           </motion.div>
         )}
       </div>
@@ -264,54 +203,57 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
         {collapsed ? (
           // Mode icônes : tous les items à plat, pas de groupes
-          groups.flatMap(g => g.items).map(renderItem)
+          [...groups.flatMap(g => g.items), ...(adminItem ? [adminItem] : [])].map(renderItem)
         ) : (
           // Mode étendu : groupes collapsibles
-          groups.map(group => {
-            const isOpen = openGroups[group.id] ?? false
-            return (
-              <div key={group.id} className="mt-1">
-                <button
-                  onClick={() => toggleGroup(group.id)}
-                  className="flex items-center justify-between w-full px-3 h-8 rounded-md
-                    text-white/40 hover:text-white/60 transition-colors"
-                  style={{ margin: '0 8px', width: 'calc(100% - 16px)' }}
-                >
-                  <span className="text-[11px] font-semibold uppercase tracking-wider">
-                    {group.label}
-                  </span>
-                  <ChevronDown
-                    style={{
-                      width: 13, height: 13,
-                      transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
-                      transition: 'transform 0.2s ease',
-                    }}
-                  />
-                </button>
+          <>
+            {groups.map(group => {
+              const isOpen = openGroups[group.id] ?? false
+              return (
+                <div key={group.id} className="mt-1">
+                  <button
+                    onClick={() => toggleGroup(group.id)}
+                    className="flex items-center justify-between w-full px-3 h-8 rounded-md
+                      text-white/40 hover:text-white/60 transition-colors"
+                    style={{ margin: '0 8px', width: 'calc(100% - 16px)' }}
+                  >
+                    <span className="text-[11px] font-semibold uppercase tracking-wider">
+                      {group.label}
+                    </span>
+                    <ChevronDown
+                      style={{
+                        width: 13, height: 13,
+                        transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                        transition: 'transform 0.2s ease',
+                      }}
+                    />
+                  </button>
 
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: 'easeInOut' }}
-                      className="overflow-hidden"
-                    >
-                      {group.items.map(renderItem)}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )
-          })
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        {group.items.map(renderItem)}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )
+            })}
+            {adminItem && renderItem(adminItem)}
+          </>
         )}
       </nav>
 
       {/* ── Footer ── */}
       <div className="border-t border-white/10 shrink-0 py-3 px-3 space-y-1">
         {!collapsed && (
-          <div className="text-white/30 text-xs px-2 mb-1">FORGE v1.0.0</div>
+          <div className="text-white/30 text-xs px-2 mb-1">MAIDERES v0.1.0</div>
         )}
         <button
           onClick={() => navigate('/account')}

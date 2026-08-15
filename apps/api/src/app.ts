@@ -6,26 +6,8 @@ import type { HonoVariables } from './types'
 import { authMiddleware } from './middleware/auth'
 import { auditMiddleware } from './middleware/audit'
 import { rateLimitMiddleware } from './middleware/rateLimit'
-import { stocksRouter } from './routes/stocks'
-import { bonsRouter } from './routes/bons'
-import { commerceRouter, publicCommandesRouter, publicDevisRouter } from './routes/commerce'
-import { financeRouter } from './routes/finance'
-import { rhRouter } from './routes/rh'
-import { aiRouter } from './routes/ai'
-import { rapportsRouter } from './routes/rapports'
-import { shopRouter, shopErpRouter } from './routes/shop'
-import { paiementsRouter } from './routes/paiements'
-import { operationsRouter } from './routes/operations'
 import { adminRouter } from './routes/admin'
-import { equipementsRouter } from './routes/equipements'
-import { creditRouter } from './routes/credit'
 import { profileRouter } from './routes/profile'
-import { fournisseursRouter } from './routes/fournisseurs'
-import { logistiqueRouter } from './routes/logistique'
-import { demarrerCronRelances } from './services/relances-cron.service'
-import { demarrerCronReappro } from './services/reappro-cron.service'
-import { checkOverdueInstallments } from './services/creditService'
-import { sendUpcomingReminders } from './services/notificationService'
 import { HTTPException } from 'hono/http-exception'
 
 const app = new Hono<{ Variables: HonoVariables }>()
@@ -40,13 +22,6 @@ const ALLOWED_ORIGINS = [
 ].filter(Boolean) as string[]
 
 app.use('*', logger())
-
-//Log de debug — AVANT le CORS
-app.use('*', async (c, next) => {
-  console.log('Origin reçue:', c.req.header('origin'))
-  console.log('ALLOWED_ORIGINS:', ALLOWED_ORIGINS)
-  await next()
-})
 
 app.use('*', cors({
   origin: (origin) => {
@@ -65,17 +40,11 @@ app.use('*', cors({
 
 app.use('*', rateLimitMiddleware)
 
-app.route('/', publicCommandesRouter)
-app.route('/', publicDevisRouter)
-app.route('/api/shop',      shopRouter)
-app.route('/api/paiements', paiementsRouter)
-
 app.get('/health', (c) =>
   c.json({
     status: 'ok',
     version: '1.0.0',
-    app: 'FORGE ERP API',
-    company: 'TAFDIL',
+    app: 'MAIDERES API',
     timestamp: new Date().toISOString(),
   }),
 )
@@ -86,7 +55,7 @@ app.get('/health/db', async (c) => {
     return c.json({ ok: false, error: 'supabaseAdmin is null — SERVICE_ROLE_KEY missing' }, 503)
   }
   try {
-    const { data, error } = await supabaseAdmin.from('produits' as never).select('id').limit(1)
+    const { data, error } = await supabaseAdmin.from('profiles' as never).select('id').limit(1)
     if (error) return c.json({ ok: false, error: error.message, code: error.code }, 500)
     return c.json({ ok: true, db: 'connected', rows_sampled: (data as unknown[]).length })
   } catch (err) {
@@ -110,21 +79,8 @@ const api = new Hono<{ Variables: HonoVariables }>()
 api.use('*', authMiddleware)
 api.use('*', auditMiddleware)
 
-api.route('/stocks',      stocksRouter)
-api.route('/bons',        bonsRouter)
-api.route('/logistique',  logistiqueRouter)   // avant operationsRouter — évite que les routes /logistique/* soient capturées par le wildcard "/"
-api.route('/',            commerceRouter)
-api.route('/',            financeRouter)
-api.route('/',            rhRouter)
-api.route('/',            aiRouter)
-api.route('/rapports',    rapportsRouter)
-api.route('/shop-erp',    shopErpRouter)
-api.route('/',            operationsRouter)
-api.route('/',            equipementsRouter)
-api.route('/admin',       adminRouter)
-api.route('/credit',      creditRouter)
-api.route('/profile',     profileRouter)
-api.route('/fournisseurs', fournisseursRouter)
+api.route('/admin',   adminRouter)
+api.route('/profile', profileRouter)
 
 app.route('/api', api)
 
@@ -154,38 +110,5 @@ app.onError((err, c) => {
 app.notFound((c) =>
   c.json({ error: `Route ${c.req.method} ${c.req.path} introuvable`, code: 'NOT_FOUND' }, 404),
 )
-
-// ── Cron relances automatiques WhatsApp (MOD-04 CDC) ──────────────────────────
-demarrerCronRelances()
-
-// ── Cron réapprovisionnement stock (quotidien, heure via REAPPRO_CRON_HOUR) ──
-demarrerCronReappro()
-
-// ── Cron Crédit : mark-overdue quotidien 06:00, rappels J-3 08:00 ─────────────
-;(function startCreditCrons() {
-  const MS_HOUR = 3_600_000
-  const MS_DAY  = 86_400_000
-
-  function scheduleAt(hour: number, fn: () => void) {
-    const now    = new Date()
-    const target = new Date(now)
-    target.setHours(hour, 0, 0, 0)
-    if (target <= now) target.setDate(target.getDate() + 1)
-    const delay  = target.getTime() - now.getTime()
-    setTimeout(() => { fn(); setInterval(fn, MS_DAY) }, delay)
-  }
-
-  scheduleAt(6, () => {
-    checkOverdueInstallments()
-      .then(r => console.info('[cron:credit:overdue]', r))
-      .catch(e => console.error('[cron:credit:overdue] erreur', e))
-  })
-
-  scheduleAt(8, () => {
-    sendUpcomingReminders()
-      .then(r => console.info('[cron:credit:reminders]', r))
-      .catch(e => console.error('[cron:credit:reminders] erreur', e))
-  })
-})()
 
 export default app

@@ -1,5 +1,5 @@
 {
-  "name": "forge-tafdil",
+  "name": "maideres",
   "private": true,
   "scripts": {
     "dev": "turbo dev --continue",

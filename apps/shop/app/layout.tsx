@@ -4,7 +4,6 @@ import { Analytics } from '@vercel/analytics/react'
 import { Providers } from './providers'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { CartDrawer } from '@/components/cart/CartDrawer'
 import { siteMetadata } from './metadata'
 import './globals.css'
 
@@ -34,7 +33,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <CartDrawer />
           <Toaster position="top-right" richColors closeButton />
           <Analytics />
         </Providers>

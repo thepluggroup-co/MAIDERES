@@ -15,26 +15,38 @@ const tsN = (col: string) => timestamp(col, { withTimezone: true })
 
 // ── Enums PostgreSQL ──────────────────────────────────────────────────────────
 
-export const rbacModuleEnum = pgEnum('rbac_module', [
+export const RBAC_MODULES = [
   'STOCK', 'COMMERCIAL', 'FINANCE', 'HR', 'PRODUCTION',
   'LOGISTICS', 'ADMIN', 'REPORTS', 'RECEIVABLES',
-])
+] as const
 
-export const rbacActionEnum = pgEnum('rbac_action', [
+export const RBAC_ACTIONS = [
   'READ', 'CREATE', 'UPDATE', 'DELETE', 'VALIDATE', 'CONFIGURE', 'EXPORT',
-])
+] as const
 
-export const rbacRoleNameEnum = pgEnum('rbac_role_name', [
+export const RBAC_ROLE_NAMES = [
   'SUPER_ADMIN', 'MANAGER', 'COMMERCIAL', 'CAISSIER',
   'MAGASINIER', 'FORMATEUR', 'READONLY',
-])
+] as const
 
-export const auditActionEnum = pgEnum('audit_action_type', [
+export type RbacModule   = typeof RBAC_MODULES[number]
+export type RbacAction   = typeof RBAC_ACTIONS[number]
+export type RbacRoleName = typeof RBAC_ROLE_NAMES[number]
+
+export const rbacModuleEnum   = pgEnum('rbac_module', RBAC_MODULES)
+export const rbacActionEnum   = pgEnum('rbac_action', RBAC_ACTIONS)
+export const rbacRoleNameEnum = pgEnum('rbac_role_name', RBAC_ROLE_NAMES)
+
+export const AUDIT_ACTIONS = [
   'ACCESS_DENIED', 'USER_CREATED', 'USER_UPDATED', 'USER_DEACTIVATED',
   'ROLE_CHANGED', 'PERMISSION_CHANGED', 'SETTINGS_CHANGED',
   'LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'DATA_EXPORT',
   'PASSWORD_RESET', 'PASSWORD_CHANGED', 'SESSION_EXPIRED',
-])
+] as const
+
+export type AuditActionType = typeof AUDIT_ACTIONS[number]
+
+export const auditActionEnum = pgEnum('audit_action_type', AUDIT_ACTIONS)
 
 // ── rbac_roles ────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-const SITE_URL = 'https://shop.tafdil.cm'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://maideres.cm'
 
 export const siteMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -9,44 +9,39 @@ export const siteMetadata: Metadata = {
     shortcut: '/metalforge-icon.svg',
   },
   title: {
-    default: 'FORGE Shop — TAFDIL | Menuiserie & Métallurgie Douala',
-    template: '%s | FORGE TAFDIL',
+    default: 'MAIDERES — Mise en relation de prestataires de services',
+    template: '%s | MAIDERES',
   },
   description:
-    'Commandez vos menuiseries aluminium, ferronneries et structures métalliques en ligne. Fabrication sur mesure à Douala, Cameroun. Devis gratuit sous 24h.',
+    'MAIDERES connecte vos besoins du quotidien (coiffure, taxi, onglerie, et plus) avec des prestataires de confiance à Douala.',
   keywords: [
-    'menuiserie aluminium douala',
-    'ferronnerie cameroun',
-    'porte aluminium cameroun',
-    'grille métallique douala',
-    'construction métallique cameroun',
-    'structure métallique douala',
-    'TAFDIL forge',
-    'menuisier douala',
+    'services douala',
+    'prestataires cameroun',
+    'marketplace services douala',
   ],
-  authors: [{ name: 'TAFDIL FORGE', url: SITE_URL }],
-  creator: 'TAFDIL FORGE',
+  authors: [{ name: 'MAIDERES', url: SITE_URL }],
+  creator: 'MAIDERES',
   openGraph: {
     type:      'website',
     locale:    'fr_CM',
     url:       SITE_URL,
-    siteName:  'FORGE Shop — TAFDIL',
-    title:     'FORGE Shop — TAFDIL | Menuiserie & Métallurgie Douala',
+    siteName:  'MAIDERES',
+    title:     'MAIDERES — Mise en relation de prestataires de services',
     description:
-      'Commandez vos menuiseries aluminium, ferronneries et structures métalliques en ligne. Fabrication sur mesure à Douala.',
+      'MAIDERES connecte vos besoins du quotidien avec des prestataires de confiance à Douala.',
     images: [
       {
         url:    '/og-image.jpg',
         width:  1200,
         height: 630,
-        alt:    'FORGE Shop — TAFDIL Menuiserie & Métallurgie Douala',
+        alt:    'MAIDERES',
       },
     ],
   },
   twitter: {
     card:        'summary_large_image',
-    title:       'FORGE Shop — TAFDIL | Menuiserie & Métallurgie Douala',
-    description: 'Menuiserie aluminium, ferronneries et métallurgie à Douala. Commande en ligne, livraison Cameroun.',
+    title:       'MAIDERES — Mise en relation de prestataires de services',
+    description: 'MAIDERES connecte vos besoins du quotidien avec des prestataires de confiance à Douala.',
     images:      ['/og-image.jpg'],
   },
   alternates: {

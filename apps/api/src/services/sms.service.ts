@@ -1,13 +1,4 @@
-const SITE_URL = process.env.SITE_URL ?? 'https://shop.tafdil.cm'
 const DEFAULT_COUNTRY_CODE = process.env.SMS_DEFAULT_COUNTRY_CODE ?? '237'
-
-type SmsEvent =
-  | 'commande_recue'
-  | 'commande_en_production'
-  | 'commande_prete'
-  | 'commande_livree'
-  | 'commande_annulee'
-  | 'facture_emise'
 
 export interface SmsResult {
   ok: boolean
@@ -15,13 +6,6 @@ export interface SmsResult {
   provider?: 'africastalking'
   error?: string
   response?: unknown
-}
-
-export interface CommandeSmsInfo {
-  numero: string
-  client_nom: string
-  telephone?: string | null
-  total_ttc_xaf?: number | null
 }
 
 function cleanPhone(phone: string) {
@@ -99,43 +83,3 @@ export async function sendSms(to: string, message: string): Promise<SmsResult> {
   }
 }
 
-function firstName(name: string) {
-  return name.trim().split(/\s+/)[0] || 'client'
-}
-
-function formatXaf(value?: number | null) {
-  if (!value || value <= 0) return ''
-  return new Intl.NumberFormat('fr-CM', {
-    style: 'currency',
-    currency: 'XAF',
-    maximumFractionDigits: 0,
-  }).format(value)
-}
-
-export function buildCommandeSms(commande: CommandeSmsInfo, event: SmsEvent) {
-  const prenom = firstName(commande.client_nom)
-  const montant = formatXaf(commande.total_ttc_xaf)
-  const suivi = `${SITE_URL}/suivi/${commande.numero}`
-
-  if (event === 'commande_recue') {
-    return `TAFDIL FORGE: Commande ${commande.numero} recue${montant ? ` (${montant})` : ''}. Suivi: ${suivi}`
-  }
-  if (event === 'commande_en_production') {
-    return `TAFDIL FORGE: Bonjour ${prenom}, votre commande ${commande.numero} est lancee en production. Suivi: ${suivi}`
-  }
-  if (event === 'commande_prete') {
-    return `TAFDIL FORGE: Bonjour ${prenom}, votre commande ${commande.numero} est prete. Nous preparons la livraison.`
-  }
-  if (event === 'commande_livree') {
-    return `TAFDIL FORGE: Bonjour ${prenom}, votre commande ${commande.numero}${montant ? ` (${montant})` : ''} a ete livree. Merci pour votre confiance.`
-  }
-  if (event === 'commande_annulee') {
-    return `TAFDIL FORGE: Bonjour ${prenom}, votre commande ${commande.numero} a ete annulee. Contactez-nous pour toute question.`
-  }
-  return `TAFDIL FORGE: Bonjour ${prenom}, la facture de votre commande ${commande.numero}${montant ? ` (${montant})` : ''} est disponible. Suivi: ${suivi}`
-}
-
-export async function notifyCommandeSms(commande: CommandeSmsInfo, event: SmsEvent) {
-  if (!commande.telephone) return { ok: false, skipped: true, error: 'Telephone client manquant' }
-  return sendSms(commande.telephone, buildCommandeSms(commande, event))
-}

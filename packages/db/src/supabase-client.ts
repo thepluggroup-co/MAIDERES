@@ -55,45 +55,9 @@ export type SupabaseClient = typeof supabase
 
 /**
  * Tables Supabase référencées dans les appels .from().
- * Ajouter ici les nouveaux noms de table au fur et à mesure.
+ * Ajouter ici les nouveaux noms de table au fur et à mesure (voir Phase 1 :
+ * categories_services, prestataires, clients, demandes, matchings,
+ * transactions, avis, reversements, notifications_log).
  */
 export type ForgeTable =
   | 'profiles'
-  | 'clients'
-  | 'produits'
-  | 'mouvements_stock'
-  | 'bons_sortie'
-  | 'bons_sortie_lignes'
-  | 'devis'
-  | 'devis_lignes'
-  | 'commandes'
-  | 'commandes_lignes'
-  | 'historique_commandes'
-  | 'factures'
-  | 'factures_lignes'
-  | 'credits'
-  | 'remboursements_credit'
-  | 'ecritures_comptables'
-  | 'declarations_fiscales'
-  | 'charges'
-  | 'sorties_tresorerie'
-  | 'charges_justificatifs'
-  | 'employes'
-  | 'presences'
-  | 'bulletins_paie'
-  | 'avances_salaire'
-  | 'retenues_salaire'
-  | 'cotisations_sociales'
-  | 'paie_periodes'
-  | 'apprenants'
-  | 'validations_niveau'
-  | 'machines'
-  | 'jobs_production'
-  | 'projets'
-  | 'taches_projet'
-  | 'livraisons'
-  | 'campagnes_marketing'
-  | 'incidents_securite'
-  | 'epi_items'
-  | 'capteurs_iot'
-  | 'mesures_iot'

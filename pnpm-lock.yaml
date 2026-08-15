@@ -401,27 +401,15 @@ importers:
 
   packages/db:
     dependencies:
-      '@libsql/client':
-        specifier: ^0.13.0
-        version: 0.13.0
-      '@paralleldrive/cuid2':
-        specifier: ^2.2.2
-        version: 2.3.1
       '@supabase/supabase-js':
         specifier: ^2.105.4
         version: 2.105.4
       drizzle-orm:
         specifier: ^0.33.0
         version: 0.33.0(@libsql/client@0.13.0)(@types/better-sqlite3@7.6.13)(@types/react@18.3.28)(better-sqlite3@11.10.0)(react@18.3.1)
-      drizzle-zod:
-        specifier: ^0.5.0
-        version: 0.5.1(drizzle-orm@0.33.0(@libsql/client@0.13.0)(@types/better-sqlite3@7.6.13)(@types/react@18.3.28)(better-sqlite3@11.10.0)(react@18.3.1))(zod@3.25.76)
       ws:
         specifier: ^8.20.1
         version: 8.20.1
-      zod:
-        specifier: ^3.23.0
-        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -3452,12 +3440,6 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-zod@0.5.1:
-    resolution: {integrity: sha512-C/8bvzUH/zSnVfwdSibOgFjLhtDtbKYmkbPbUCq46QZyZCH6kODIMSOgZ8R7rVjoI+tCj3k06MRJMDqsIeoS4A==}
-    peerDependencies:
-      drizzle-orm: '>=0.23.13'
-      zod: '*'
-
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
@@ -6439,10 +6421,12 @@ snapshots:
       - bufferutil
       - encoding
       - utf-8-validate
+    optional: true
 
   '@libsql/core@0.13.0':
     dependencies:
       js-base64: 3.7.8
+    optional: true
 
   '@libsql/darwin-arm64@0.4.7':
     optional: true
@@ -6460,6 +6444,7 @@ snapshots:
       - bufferutil
       - encoding
       - utf-8-validate
+    optional: true
 
   '@libsql/isomorphic-ws@0.1.5':
     dependencies:
@@ -6468,6 +6453,7 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   '@libsql/linux-arm64-gnu@0.4.7':
     optional: true
@@ -6497,7 +6483,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@neon-rs/load@0.0.4': {}
+  '@neon-rs/load@0.0.4':
+    optional: true
 
   '@next/env@14.2.35': {}
 
@@ -7983,6 +7970,7 @@ snapshots:
       node-fetch: 2.7.0
     transitivePeerDependencies:
       - encoding
+    optional: true
 
   cross-spawn@7.0.6:
     dependencies:
@@ -8039,7 +8027,8 @@ snapshots:
 
   d3-timer@3.0.1: {}
 
-  data-uri-to-buffer@4.0.1: {}
+  data-uri-to-buffer@4.0.1:
+    optional: true
 
   data-urls@7.0.0(@noble/hashes@2.2.0):
     dependencies:
@@ -8086,7 +8075,8 @@ snapshots:
 
   dequal@2.0.3: {}
 
-  detect-libc@2.0.2: {}
+  detect-libc@2.0.2:
+    optional: true
 
   detect-libc@2.1.2: {}
 
@@ -8166,11 +8156,6 @@ snapshots:
       '@types/react': 18.3.28
       better-sqlite3: 11.10.0
       react: 18.3.1
-
-  drizzle-zod@0.5.1(drizzle-orm@0.33.0(@libsql/client@0.13.0)(@types/better-sqlite3@7.6.13)(@types/react@18.3.28)(better-sqlite3@11.10.0)(react@18.3.1))(zod@3.25.76):
-    dependencies:
-      drizzle-orm: 0.33.0(@libsql/client@0.13.0)(@types/better-sqlite3@7.6.13)(@types/react@18.3.28)(better-sqlite3@11.10.0)(react@18.3.1)
-      zod: 3.25.76
 
   dunder-proto@1.0.1:
     dependencies:
@@ -8498,6 +8483,7 @@ snapshots:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
+    optional: true
 
   file-uri-to-path@1.0.0: {}
 
@@ -8552,6 +8538,7 @@ snapshots:
   formdata-polyfill@4.0.10:
     dependencies:
       fetch-blob: 3.2.0
+    optional: true
 
   formidable@3.5.4:
     dependencies:
@@ -8893,7 +8880,8 @@ snapshots:
 
   joycon@3.1.1: {}
 
-  js-base64@3.7.8: {}
+  js-base64@3.7.8:
+    optional: true
 
   js-md5@0.8.3: {}
 
@@ -9000,6 +8988,7 @@ snapshots:
       '@libsql/linux-x64-gnu': 0.4.7
       '@libsql/linux-x64-musl': 0.4.7
       '@libsql/win32-x64-msvc': 0.4.7
+    optional: true
 
   lightningcss-android-arm64@1.32.0:
     optional: true
@@ -9296,6 +9285,7 @@ snapshots:
       data-uri-to-buffer: 4.0.1
       fetch-blob: 3.2.0
       formdata-polyfill: 4.0.10
+    optional: true
 
   node-releases@2.0.44: {}
 
@@ -9484,7 +9474,8 @@ snapshots:
 
   progress@2.0.3: {}
 
-  promise-limit@2.7.0: {}
+  promise-limit@2.7.0:
+    optional: true
 
   promise-retry@2.0.1:
     dependencies:
@@ -10345,7 +10336,8 @@ snapshots:
       - debug
       - supports-color
 
-  web-streams-polyfill@3.3.3: {}
+  web-streams-polyfill@3.3.3:
+    optional: true
 
   web-streams-polyfill@4.0.0-beta.3: {}
 

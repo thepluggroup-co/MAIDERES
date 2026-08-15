@@ -6,7 +6,7 @@ export type WorkflowNotificationPayload = {
   event: string
   titre: string
   message: string
-  module: 'boutique' | 'commandes' | 'stock' | 'finance' | 'logistique' | 'production'
+  module: string
   severite?: 'info' | 'success' | 'warning' | 'error'
   ref?: string | null
   url?: string | null
@@ -15,7 +15,7 @@ export type WorkflowNotificationPayload = {
 
 export async function notifyWorkflow(payload: WorkflowNotificationPayload): Promise<void> {
   try {
-    const channel = db.channel('forge-workflow')
+    const channel = db.channel('maideres-workflow')
     await channel.send({
       type:  'broadcast',
       event: 'workflow_notification',

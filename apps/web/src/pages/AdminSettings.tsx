@@ -20,9 +20,9 @@ const ADMIN_TABS: AdminTab[] = ['Utilisateurs', 'RBAC', 'Permissions', 'Audit', 
 
 const ROLES: { value: ForgeRole; label: string; color: string; bg: string; desc: string }[] = [
   { value: 'admin',       label: 'Admin (Patron)',  color: '#C62828', bg: '#FFEBEE', desc: 'Accès complet + gestion utilisateurs' },
-  { value: 'superviseur', label: 'Superviseur',     color: '#1d4ed8', bg: '#dbeafe', desc: 'Validation, stocks, rapports, formation' },
-  { value: 'operateur',   label: 'Opérateur',       color: '#15803d', bg: '#dcfce7', desc: 'Stocks, commandes, bons, production' },
-  { value: 'technicien',  label: 'Technicien',      color: '#6b7280', bg: '#f3f4f6', desc: 'Activité complète + modules commerciaux' },
+  { value: 'superviseur', label: 'Superviseur',     color: '#1d4ed8', bg: '#dbeafe', desc: 'Validation, opérations, rapports' },
+  { value: 'operateur',   label: 'Opérateur',       color: '#15803d', bg: '#dcfce7', desc: 'Traitement des demandes et du matching' },
+  { value: 'technicien',  label: 'Technicien',      color: '#6b7280', bg: '#f3f4f6', desc: 'Activité opérationnelle standard' },
 ]
 
 function RoleBadge({ role }: { role: ForgeRole }) {

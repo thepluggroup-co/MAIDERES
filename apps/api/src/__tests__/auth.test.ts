@@ -43,15 +43,8 @@ import app from '../app'
 // Route protégée : POST /api/stocks/:id/mouvement (requireRole operateur+)
 const PROTECTED_POST = '/api/stocks/some-id/mouvement'
 
-// Route admin/directeur seulement : POST /api/factures
-const ADMIN_ONLY_POST = '/api/factures'
-
-const ADMIN_ONLY_BODY = JSON.stringify({
-  client_nom:    'SODECOTON',
-  date_emission: '2026-05-18',
-  date_echeance: '2026-06-18',
-  lignes: [{ designation: 'Test', quantite: 1, prix_unitaire_ht_xaf: 1000 }],
-})
+// Route admin seulement : GET /api/admin/users
+const ADMIN_ONLY_GET = '/api/admin/users'
 
 describe('Test 9 — Requête sans token → 401 MISSING_TOKEN', () => {
   it('retourne 401 MISSING_TOKEN sans header Authorization', async () => {
@@ -168,7 +161,7 @@ describe('Test 10 — Token invalide ou expiré → 401 INVALID_TOKEN', () => {
 })
 
 describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
-  it('retourne 403 FORBIDDEN : viewer sur route directeur/admin (POST /api/factures)', async () => {
+  it('retourne 403 FORBIDDEN : viewer sur route admin (GET /api/admin/users)', async () => {
     const viewerToken = jwt.sign(
       {
         sub:          'viewer-user',
@@ -180,13 +173,9 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
       { expiresIn: '1h' },
     )
 
-    const res = await app.request(ADMIN_ONLY_POST, {
-      method:  'POST',
-      headers: new Headers({
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${viewerToken}`,
-      }),
-      body: ADMIN_ONLY_BODY,
+    const res = await app.request(ADMIN_ONLY_GET, {
+      method:  'GET',
+      headers: new Headers({ 'Authorization': `Bearer ${viewerToken}` }),
     })
 
     expect(res.status).toBe(403)
@@ -195,7 +184,7 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
     expect(body.error).toMatch(/accès refusé/i)
   })
 
-  it('retourne 403 FORBIDDEN : operateur sur route directeur/admin (POST /api/factures)', async () => {
+  it('retourne 403 FORBIDDEN : operateur sur route admin (GET /api/admin/users)', async () => {
     const operateurToken = jwt.sign(
       {
         sub:          'operateur-user',
@@ -207,13 +196,9 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
       { expiresIn: '1h' },
     )
 
-    const res = await app.request(ADMIN_ONLY_POST, {
-      method:  'POST',
-      headers: new Headers({
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${operateurToken}`,
-      }),
-      body: ADMIN_ONLY_BODY,
+    const res = await app.request(ADMIN_ONLY_GET, {
+      method:  'GET',
+      headers: new Headers({ 'Authorization': `Bearer ${operateurToken}` }),
     })
 
     expect(res.status).toBe(403)
@@ -221,12 +206,12 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
     expect(body.code).toBe('FORBIDDEN')
   })
 
-  it('opérateur accède normalement aux routes opérateur (GET /api/stocks)', async () => {
+  it('opérateur accède normalement aux routes ouvertes à tous les rôles (GET /api/profile/me)', async () => {
     const { supabase } = await import('@forge/db/supabase')
     const { mkChain }  = await import('./helpers')
 
     vi.mocked(supabase.from).mockReturnValueOnce(
-      mkChain({ data: [], count: 0, error: null }) as never,
+      mkChain({ data: { id: 'operateur-ok', role: 'operateur' }, error: null }) as never,
     )
 
     const operateurToken = jwt.sign(
@@ -240,7 +225,7 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
       { expiresIn: '1h' },
     )
 
-    const res = await app.request('/api/stocks', {
+    const res = await app.request('/api/profile/me', {
       method:  'GET',
       headers: new Headers({ 'Authorization': `Bearer ${operateurToken}` }),
     })

@@ -1,11 +1,11 @@
 import { defineConfig } from 'drizzle-kit'
 
 export default defineConfig({
-  schema:  './src/schema.ts',
+  schema:  './src/schema.pg.ts',
   out:     './migrations',
-  dialect: 'sqlite',
+  dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'file:forge-local.db',
+    url: process.env.DATABASE_URL ?? '',
   },
   verbose: true,
   strict:  true,

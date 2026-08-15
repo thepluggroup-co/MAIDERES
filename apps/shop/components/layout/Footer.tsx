@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Mail, MapPin, Phone, Send, ShieldCheck, Truck, Wallet, Headphones } from 'lucide-react'
+import { Mail, MapPin, Phone, ShieldCheck, Truck, Wallet, Headphones } from 'lucide-react'
 import { MetalForgeLogo } from '@/components/ui/BrandLogo'
 
 export function Footer() {
@@ -27,11 +27,11 @@ export function Footer() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1.2fr]">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1.2fr]">
           <div>
             <MetalForgeLogo size={30} variant="white" />
             <p className="mt-4 max-w-xs text-sm leading-6 text-gray-400">
-              Fournitures industrielles et metalliques de qualite pour les professionnels et particuliers. Livraison rapide partout au Cameroun.
+              MAIDERES connecte vos besoins du quotidien avec des prestataires de confiance à Douala.
             </p>
             <div className="mt-5 flex gap-2">
               {['f', 'ig', 'wa', 'in'].map((item) => (
@@ -41,52 +41,22 @@ export function Footer() {
           </div>
 
           <FooterColumn title="Navigation" links={[
-            ['Catalogue', '/catalogue'],
-            ['Promotions', '/catalogue'],
-            ['Suivre ma commande', '/suivi'],
-            ['Blog', '/blog'],
-            ['A propos', '/contact'],
-            ['Contact', '/contact'],
-          ]} />
-
-          <FooterColumn title="Categories" links={[
-            ['Aluminium', '/catalogue?categorie=Aluminium'],
-            ['Ferronnerie', '/catalogue?categorie=Ferronnerie'],
-            ['Construction metallique', '/catalogue?categorie=Construction%20metallique'],
-            ['Outils & Accessoires', '/catalogue?categorie=Outils%20%26%20Accessoires'],
-            ['Fixations', '/catalogue?categorie=Fixations'],
-            ['Voir toutes les categories', '/catalogue'],
+            ['Suivre ma demande', '/suivi'],
+            ['Mon compte', '/compte/login'],
           ]} />
 
           <div>
             <p className="mb-4 text-sm font-black uppercase tracking-wider text-gray-300">Contact</p>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li className="flex gap-2"><MapPin size={16} className="mt-0.5 shrink-0 text-forge-red" /> KOTTO, derriere l'ecole Mauryvanas, Douala</li>
+              <li className="flex gap-2"><MapPin size={16} className="mt-0.5 shrink-0 text-forge-red" /> Douala, Cameroun</li>
               <li className="flex gap-2"><Phone size={16} className="shrink-0 text-forge-red" /> +237 695884528</li>
-              <li className="flex gap-2"><Mail size={16} className="shrink-0 text-forge-red" /> contact@metalforge.cm</li>
-              <li className="text-gray-500">Lun - Sam : 7h30 - 18h</li>
+              <li className="flex gap-2"><Mail size={16} className="shrink-0 text-forge-red" /> contact@maideres.cm</li>
             </ul>
-          </div>
-
-          <div>
-            <p className="mb-4 text-sm font-black uppercase tracking-wider text-gray-300">Newsletter</p>
-            <p className="text-sm leading-6 text-gray-400">Recevez nos conseils, offres et nouveautes par email.</p>
-            <form className="mt-4 flex overflow-hidden rounded-lg bg-white/10">
-              <input type="email" placeholder="Votre adresse email" className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm text-white outline-none placeholder:text-gray-500" />
-              <button type="submit" className="bg-forge-red px-4 text-white" aria-label="S inscrire">
-                <Send size={16} />
-              </button>
-            </form>
           </div>
         </div>
 
         <div className="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-gray-500 md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} MetalForge. Tous droits reserves.</p>
-          <div className="flex flex-wrap gap-5">
-            <Link href="/contact" className="hover:text-white">CGV</Link>
-            <Link href="/contact" className="hover:text-white">Politique de confidentialite</Link>
-            <Link href="/contact" className="hover:text-white">Mentions legales</Link>
-          </div>
+          <p>© {new Date().getFullYear()} MAIDERES. Tous droits reserves.</p>
         </div>
       </div>
 

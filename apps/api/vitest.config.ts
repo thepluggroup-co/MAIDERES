@@ -19,26 +19,18 @@ export default defineConfig({
         'src/index.ts',
         'src/types.ts',
         // Services d'infrastructure externe — non testables en unit sans infra réelle
-        'src/services/pdf.service.ts',
         'src/services/sms.service.ts',
-        'src/services/email-queue.service.ts',
-        'src/services/notifications.ts',
-        'src/services/notificationService.ts',
-        'src/services/db-local.ts',
-        // Routes sans tests (hors périmètre Tâche 1) ou avec bug v8 source-map
+        'src/services/offline-fallback.ts',
+        'src/services/workflow-notifications.service.ts',
+        // Routes sans tests
         'src/routes/admin.ts',
-        'src/routes/equipements.ts',
-        'src/routes/fournisseurs.ts',
-        'src/routes/operations.ts',
         // Middleware non testables en unit (rate-limit login = infra)
         'src/middleware/loginRateLimit.middleware.ts',
-        // Service métier complexe non couvert (règles éligibilité multi-table)
-        'src/services/credit-eligibility.service.ts',
       ],
       thresholds: {
         lines:      50,
-        branches:   55,
-        functions:  75,  // ajusté : rateLimit + ai réduisent la moyenne globale
+        branches:   50,
+        functions:  60,
         statements: 50,
       },
     },

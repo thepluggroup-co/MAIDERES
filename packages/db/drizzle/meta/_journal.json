@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1786783536246,
+      "tag": "0000_common_cerebro",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786784371473,
+      "tag": "0001_rls_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786886428078,
+      "tag": "0002_smooth_red_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786886500000,
+      "tag": "0003_audit_log_rls",
+      "breakpoints": true
+    }
+  ]
+}

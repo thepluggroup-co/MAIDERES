@@ -8,6 +8,12 @@ import { auditMiddleware } from './middleware/audit'
 import { rateLimitMiddleware } from './middleware/rateLimit'
 import { adminRouter } from './routes/admin'
 import { profileRouter } from './routes/profile'
+import { categoriesRouter } from './routes/categories'
+import { prestatairesRouter } from './routes/prestataires'
+import { clientsRouter } from './routes/clients'
+import { demandesRouter } from './routes/demandes'
+import { matchingsRouter } from './routes/matchings'
+import { avisRouter } from './routes/avis'
 import { HTTPException } from 'hono/http-exception'
 
 const app = new Hono<{ Variables: HonoVariables }>()
@@ -81,6 +87,12 @@ api.use('*', auditMiddleware)
 
 api.route('/admin',   adminRouter)
 api.route('/profile', profileRouter)
+api.route('/categories_services', categoriesRouter)
+api.route('/prestataires',        prestatairesRouter)
+api.route('/clients',             clientsRouter)
+api.route('/demandes',            demandesRouter)
+api.route('/matchings',           matchingsRouter)
+api.route('/avis',                avisRouter)
 
 app.route('/api', api)
 

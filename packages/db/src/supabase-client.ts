@@ -55,9 +55,17 @@ export type SupabaseClient = typeof supabase
 
 /**
  * Tables Supabase référencées dans les appels .from().
- * Ajouter ici les nouveaux noms de table au fur et à mesure (voir Phase 1 :
- * categories_services, prestataires, clients, demandes, matchings,
- * transactions, avis, reversements, notifications_log).
+ * Ajouter ici les nouveaux noms de table au fur et à mesure.
  */
 export type ForgeTable =
   | 'profiles'
+  | 'audit_log'
+  | 'categories_services'
+  | 'prestataires'
+  | 'clients'
+  | 'demandes'
+  | 'matchings'
+  | 'transactions'
+  | 'avis'
+  | 'reversements'
+  | 'notifications_log'

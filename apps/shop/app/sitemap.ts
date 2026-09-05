@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { createPublicClient } from '@/lib/supabase'
 
-const SITE_URL = 'https://shop.tafdil.cm'
+const SITE_URL = 'https://maideres.vercel.app'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()

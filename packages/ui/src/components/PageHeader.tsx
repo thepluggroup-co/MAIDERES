@@ -21,11 +21,11 @@ export function PageHeader({ title, subtitle, actions, breadcrumbs }: PageHeader
             <React.Fragment key={i}>
               {i > 0 && <span>/</span>}
               {crumb.href ? (
-                <a href={crumb.href} className="hover:text-[#C62828] transition-colors">
+                <a href={crumb.href} className="hover:text-[#A82D7E] transition-colors">
                   {crumb.label}
                 </a>
               ) : (
-                <span className="text-[#212121] font-medium">{crumb.label}</span>
+                <span className="text-[#1F2430] font-medium">{crumb.label}</span>
               )}
             </React.Fragment>
           ))}
@@ -34,7 +34,7 @@ export function PageHeader({ title, subtitle, actions, breadcrumbs }: PageHeader
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#212121] leading-tight">{title}</h1>
+          <h1 className="text-2xl font-bold text-[#1F2430] leading-tight">{title}</h1>
           {subtitle && (
             <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
           )}

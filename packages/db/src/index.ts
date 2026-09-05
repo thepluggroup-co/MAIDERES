@@ -1,4 +1,4 @@
-// MAIDERES — @forge/db
+// MAIDERES — @maideres/db
 // Schéma Drizzle ORM (PostgreSQL / Supabase) et clients DB.
 
 // ── Schéma PostgreSQL (Supabase) ──────────────────────────────────────────────

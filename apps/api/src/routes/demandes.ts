@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from '../types'
 import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
 
@@ -13,12 +13,12 @@ if (!supabaseAdmin) {
 }
 const db = supabaseAdmin!
 
-const DEMANDE_FIELDS = 'id, client_id, categorie_id, description, localisation, canal, statut, created_at'
+const DEMANDE_FIELDS = 'id, client_id, categorie_id, description, localisation, canal, statut, created_at, niveau_urgence, date_souhaitee, delai_cible'
 
 // ── GET /api/demandes — liste, filtrée par rôle ───────────────────────────────
 demandesRouter.get('/', async (c) => {
   const user = c.get('user')
-  const { statut, categorie, canal } = c.req.query()
+  const { statut, categorie, canal, urgence } = c.req.query()
 
   let query = db.from('demandes').select(DEMANDE_FIELDS)
 
@@ -45,6 +45,7 @@ demandesRouter.get('/', async (c) => {
   if (statut)    query = query.eq('statut', statut)
   if (categorie) query = query.eq('categorie_id', categorie)
   if (canal)     query = query.eq('canal', canal)
+  if (urgence)   query = query.eq('niveau_urgence', urgence)
 
   const { data, error } = await query.order('created_at', { ascending: false })
   if (error) return c.json({ error: error.message }, 500)
@@ -85,13 +86,20 @@ async function canAccessDemande(user: { id: string; role: string }, demande: { c
 }
 
 // ── POST /api/demandes — création multi-canal ─────────────────────────────────
+// delai_cible n'est jamais accepté ici : calculé par trigger DB à partir de
+// niveau_urgence/date_souhaitee (cf. packages/db/drizzle/0015_demandes_delai_cible_trigger.sql).
 const createSchema = z.object({
-  client_id:    z.string().uuid().optional(), // staff seulement : demande créée pour un client
-  categorie_id: z.string().uuid(),
-  description:  z.string().trim().min(1).max(2000),
-  localisation: z.string().trim().max(200).nullable().optional(),
-  canal:        z.enum(['web', 'whatsapp', 'manuel']).default('web'),
-})
+  client_id:      z.string().uuid().optional(), // staff seulement : demande créée pour un client
+  categorie_id:   z.string().uuid(),
+  description:    z.string().trim().min(1).max(2000),
+  localisation:   z.string().trim().max(200).nullable().optional(),
+  canal:          z.enum(['web', 'whatsapp', 'manuel']).default('web'),
+  niveau_urgence: z.enum(['immediate', 'urgent', 'planifie']).default('urgent'),
+  date_souhaitee: z.string().datetime().nullable().optional(),
+}).refine(
+  (body) => body.niveau_urgence !== 'planifie' || Boolean(body.date_souhaitee),
+  { message: 'date_souhaitee est requise pour une demande planifiée', path: ['date_souhaitee'] },
+)
 
 demandesRouter.post('/', zValidator('json', createSchema), async (c) => {
   const user = c.get('user')
@@ -116,6 +124,8 @@ demandesRouter.post('/', zValidator('json', createSchema), async (c) => {
       localisation: body.localisation ?? null,
       canal:        body.canal,
       statut:       'nouvelle',
+      niveau_urgence: body.niveau_urgence,
+      date_souhaitee: body.date_souhaitee ?? null,
     })
     .select(DEMANDE_FIELDS)
     .single()

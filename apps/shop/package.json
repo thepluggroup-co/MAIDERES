@@ -1,5 +1,5 @@
 {
-  "name": "@forge/shop",
+  "name": "@maideres/shop",
   "private": true,
   "version": "0.0.1",
   "scripts": {
@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@forge/shared": "workspace:*",
-    "@forge/ui": "workspace:*",
+    "@maideres/shared": "workspace:*",
+    "@maideres/ui": "workspace:*",
     "@supabase/ssr": "^0.5.0",
     "@supabase/supabase-js": "^2.45.0",
     "@tanstack/react-query": "^5.56.0",

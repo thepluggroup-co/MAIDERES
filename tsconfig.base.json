@@ -15,14 +15,14 @@
     "declarationMap": true,
     "sourceMap": true,
     "paths": {
-      "@forge/ui": ["./packages/ui/src"],
-      "@forge/ui/*": ["./packages/ui/src/*"],
-      "@forge/db": ["./packages/db/src"],
-      "@forge/db/*": ["./packages/db/src/*"],
-      "@forge/shared": ["./packages/shared/src"],
-      "@forge/shared/*": ["./packages/shared/src/*"],
-      "@forge/ai": ["./packages/ai/src"],
-      "@forge/ai/*": ["./packages/ai/src/*"]
+      "@maideres/ui": ["./packages/ui/src"],
+      "@maideres/ui/*": ["./packages/ui/src/*"],
+      "@maideres/db": ["./packages/db/src"],
+      "@maideres/db/*": ["./packages/db/src/*"],
+      "@maideres/shared": ["./packages/shared/src"],
+      "@maideres/shared/*": ["./packages/shared/src/*"],
+      "@maideres/ai": ["./packages/ai/src"],
+      "@maideres/ai/*": ["./packages/ai/src/*"]
     }
   },
   "exclude": ["node_modules"]

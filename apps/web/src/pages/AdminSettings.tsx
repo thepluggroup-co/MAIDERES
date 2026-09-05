@@ -4,25 +4,26 @@ import {
   Users, UserPlus, Shield, CheckCircle, XCircle,
   Mail, Crown, ChevronDown, Loader2, Search,
 } from 'lucide-react'
-import { PageHeader, Button, SlideOver } from '@forge/ui'
+import { PageHeader, Button, SlideOver } from '@maideres/ui'
 import { useAuth } from '@/context/AuthContext'
 import { useAdminUsers, useUpdateUser, useInviteUser } from '@/hooks/useAdmin'
 import type { ForgeRole, UserProfile } from '@/hooks/useAdmin'
 import { toast } from 'sonner'
 import { Navigate } from 'react-router-dom'
-import { UserManagement, PermissionsMatrix, AuditLogViewer, SecuritySettings } from '@/features/admin'
+import { UserManagement, PermissionsMatrix, AuditLogViewer, SecuritySettings, ParametresMetier } from '@/features/admin'
+import Prestataires from '@/pages/Prestataires'
 import type { RbacRoleName } from '@/hooks/useRbac'
 
-type AdminTab = 'Utilisateurs' | 'RBAC' | 'Permissions' | 'Audit' | 'Sécurité'
-const ADMIN_TABS: AdminTab[] = ['Utilisateurs', 'RBAC', 'Permissions', 'Audit', 'Sécurité']
+type AdminTab = 'Utilisateurs' | 'RBAC' | 'Prestataires' | 'Permissions' | 'Audit' | 'Sécurité' | 'Paramètres métier'
+const ADMIN_TABS: AdminTab[] = ['Utilisateurs', 'RBAC', 'Prestataires', 'Permissions', 'Audit', 'Sécurité', 'Paramètres métier']
 
 // ── Role config ────────────────────────────────────────────────────────────────
 
 const ROLES: { value: ForgeRole; label: string; color: string; bg: string; desc: string }[] = [
-  { value: 'admin',       label: 'Admin (Patron)',  color: '#C62828', bg: '#FFEBEE', desc: 'Accès complet + gestion utilisateurs' },
-  { value: 'superviseur', label: 'Superviseur',     color: '#1d4ed8', bg: '#dbeafe', desc: 'Validation, opérations, rapports' },
-  { value: 'operateur',   label: 'Opérateur',       color: '#15803d', bg: '#dcfce7', desc: 'Traitement des demandes et du matching' },
-  { value: 'technicien',  label: 'Technicien',      color: '#6b7280', bg: '#f3f4f6', desc: 'Activité opérationnelle standard' },
+  { value: 'admin',       label: 'Admin (Patron)',  color: '#7A1F5C', bg: '#F7E4F0', desc: 'Accès complet + gestion utilisateurs' },
+  { value: 'superviseur', label: 'Superviseur',     color: '#1B3D6E', bg: '#E4EAF4', desc: 'Validation, opérations, rapports' },
+  { value: 'operateur',   label: 'Opérateur',       color: '#5A3E08', bg: '#FDEFD6', desc: 'Traitement des demandes et du matching' },
+  { value: 'technicien',  label: 'Technicien',      color: '#254C8C', bg: '#EEF3FA', desc: 'Activité opérationnelle standard' },
 ]
 
 function RoleBadge({ role }: { role: ForgeRole }) {
@@ -122,18 +123,18 @@ function UserRow({ user, isSelf }: { user: UserProfile; isSelf: boolean }) {
         <div className="flex items-center gap-3">
           <div
             className="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-semibold shrink-0"
-            style={{ backgroundColor: user.actif ? '#C62828' : '#9ca3af' }}
+            style={{ backgroundColor: user.actif ? '#254C8C' : '#B5B2AB' }}
           >
             {initial}
           </div>
           <div className="min-w-0">
             {user.nom && (
-              <div className="text-sm font-semibold text-[#212121] truncate">{user.nom}</div>
+              <div className="text-sm font-semibold text-foreground truncate">{user.nom}</div>
             )}
             <div className="text-xs text-gray-400 truncate">{user.email}</div>
           </div>
           {isSelf && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FFEBEE] text-[#C62828] shrink-0">
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-accent text-[#A82D7E] shrink-0">
               Vous
             </span>
           )}
@@ -183,19 +184,21 @@ function UserRow({ user, isSelf }: { user: UserProfile; isSelf: boolean }) {
 
 // ── Rôles RBAC pour le formulaire d'invitation ────────────────────────────────
 
-// Rôles basés sur la configuration originale de FORGE
-const FORGE_ROLES: Array<{
+// Rôles internes de la marketplace MAIDERES.
+const RBAC_ROLES: Array<{
   name: RbacRoleName; label: string; desc: string; color: string; bg: string; icon?: string
 }> = [
-  { name: 'SUPER_ADMIN', label: 'Admin (Patron)',  desc: 'Accès complet + gestion utilisateurs',       color: '#C62828', bg: '#FFEBEE', icon: '👑' },
-  { name: 'MANAGER',     label: 'Superviseur',     desc: 'Validation, stocks, rapports, formation',    color: '#1d4ed8', bg: '#dbeafe' },
-  { name: 'COMMERCIAL',  label: 'Opérateur',       desc: 'Stocks, commandes, bons, production',        color: '#15803d', bg: '#dcfce7' },
-  { name: 'READONLY',    label: 'Apprenant',       desc: 'Lecture tâches, stock et formation',         color: '#6b7280', bg: '#f3f4f6' },
+  { name: 'SUPER_ADMIN',     label: 'Administrateur plateforme', desc: 'Gouvernance, sécurité et accès complet', color: '#7A1F5C', bg: '#F7E4F0', icon: '👑' },
+  { name: 'OPS_MANAGER',     label: 'Responsable opérations',    desc: 'Supervision des demandes et interventions', color: '#1B3D6E', bg: '#E4EAF4' },
+  { name: 'DISPATCHER',      label: 'Opérateur de mise en relation', desc: 'Qualification des demandes et matching', color: '#5A3E08', bg: '#FDEFD6' },
+  { name: 'PARTNER_MANAGER', label: 'Responsable réseau prestataires', desc: 'Qualification et suivi des prestataires', color: '#2D6A4F', bg: '#E4F3EA' },
+  { name: 'FINANCE_MANAGER', label: 'Responsable financier',    desc: 'Transactions, commissions et reversements', color: '#28627A', bg: '#E3F1F5' },
+  { name: 'AUDITOR',         label: 'Auditeur interne',          desc: 'Consultation des rapports et journaux', color: '#586174', bg: '#EEF0F4' },
 ]
 
 // ── Invite slide-over ──────────────────────────────────────────────────────────
 
-const DEFAULT_INVITE = { email: '', rbacRoleName: 'COMMERCIAL' as RbacRoleName, nom: '' }
+const DEFAULT_INVITE = { email: '', rbacRoleName: 'DISPATCHER' as RbacRoleName, nom: '' }
 
 function InviteSlideOver({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [form, setForm] = useState(DEFAULT_INVITE)
@@ -238,9 +241,9 @@ function InviteSlideOver({ open, onClose }: { open: boolean; onClose: () => void
               type="email"
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              placeholder="prenom.nom@tafdil.cm"
+              placeholder="prenom.nom@maideres.com"
               className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-[#C62828]"
+                focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
@@ -255,7 +258,7 @@ function InviteSlideOver({ open, onClose }: { open: boolean; onClose: () => void
             onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
             placeholder="ex. Jean-Pierre Kamga"
             className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg
-              focus:outline-none focus:ring-2 focus:ring-[#C62828]"
+              focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
@@ -265,7 +268,7 @@ function InviteSlideOver({ open, onClose }: { open: boolean; onClose: () => void
             Rôle &amp; permissions
           </label>
           <div className="grid grid-cols-2 gap-2">
-              {FORGE_ROLES.map((r) => {
+              {RBAC_ROLES.map((r) => {
                 const selected = form.rbacRoleName === r.name
                 return (
                   <button
@@ -360,16 +363,9 @@ export default function AdminSettings() {
         title="Administration"
         subtitle="Gestion des utilisateurs, permissions et sécurité"
         breadcrumbs={[
-          { label: 'FORGE', href: '/' },
+          { label: 'MAIDERES', href: '/' },
           { label: 'Administration' },
         ]}
-        actions={
-          adminTab === 'Utilisateurs' ? (
-            <Button size="sm" onClick={() => setInvite(true)}>
-              <UserPlus className="h-3.5 w-3.5" /> Inviter un utilisateur
-            </Button>
-          ) : null
-        }
       />
 
       {/* ── Tab navigation ── */}
@@ -380,7 +376,7 @@ export default function AdminSettings() {
             onClick={() => setAdminTab(tab)}
             className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 transition-colors ${
               adminTab === tab
-                ? 'border-[#C62828] text-[#C62828] bg-[#FFEBEE]/50'
+                ? 'border-[#254C8C] text-[#254C8C] bg-accent/50'
                 : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50'
             }`}
           >
@@ -390,18 +386,20 @@ export default function AdminSettings() {
       </div>
 
       {/* ── Onglet : Utilisateurs (legacy) ── */}
-      {adminTab === 'Utilisateurs' && (
+      {adminTab === 'Utilisateurs' && <UserManagement />}
+
+      {false && adminTab === 'Utilisateurs' && (
         <div className="space-y-6">
 
       {/* ── Stats ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total',         value: counts.total,       color: '#212121', bg: '#f5f5f5' },
-          { label: 'Admins',        value: counts.admin,       color: '#C62828', bg: '#FFEBEE' },
-          { label: 'Superviseurs',  value: counts.superviseur, color: '#1d4ed8', bg: '#dbeafe' },
-          { label: 'Opérateurs',    value: counts.operateur,   color: '#15803d', bg: '#dcfce7' },
-          { label: 'Techniciens',   value: counts.technicien,  color: '#6b7280', bg: '#f3f4f6' },
-          { label: 'Inactifs',      value: counts.inactif,     color: '#9ca3af', bg: '#f9fafb' },
+          { label: 'Total',         value: counts.total,       color: '#1F2430', bg: '#F1EEE9' },
+          { label: 'Admins',        value: counts.admin,       color: '#7A1F5C', bg: '#F7E4F0' },
+          { label: 'Superviseurs',  value: counts.superviseur, color: '#1B3D6E', bg: '#E4EAF4' },
+          { label: 'Opérateurs',    value: counts.operateur,   color: '#5A3E08', bg: '#FDEFD6' },
+          { label: 'Techniciens',   value: counts.technicien,  color: '#254C8C', bg: '#EEF3FA' },
+          { label: 'Inactifs',      value: counts.inactif,     color: '#5F5E5A', bg: '#F1EEE9' },
         ].map(({ label, value, color, bg }) => (
           <div
             key={label}
@@ -419,8 +417,8 @@ export default function AdminSettings() {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 gap-3">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-[#C62828]" />
-            <h2 className="font-semibold text-sm text-[#212121]">Utilisateurs</h2>
+            <Users className="h-4 w-4 text-[#254C8C]" />
+            <h2 className="font-semibold text-sm text-foreground">Utilisateurs</h2>
             <span className="text-xs text-gray-400 font-normal">({filtered.length})</span>
           </div>
 
@@ -432,7 +430,7 @@ export default function AdminSettings() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher…"
               className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg
-                focus:outline-none focus:ring-2 focus:ring-[#C62828] bg-gray-50"
+                focus:outline-none focus:ring-2 focus:ring-ring bg-gray-50"
             />
           </div>
         </div>
@@ -440,7 +438,7 @@ export default function AdminSettings() {
         {/* Table */}
         {isLoading ? (
           <div className="flex items-center justify-center py-16 gap-2 text-gray-400 text-sm">
-            <Loader2 className="h-5 w-5 animate-spin text-[#C62828]" />
+            <Loader2 className="h-5 w-5 animate-spin text-[#254C8C]" />
             Chargement des utilisateurs…
           </div>
         ) : filtered.length === 0 ? (
@@ -473,8 +471,8 @@ export default function AdminSettings() {
       {/* ── Permission matrix ── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
-          <Shield className="h-4 w-4 text-[#C62828]" />
-          <h2 className="font-semibold text-sm text-[#212121]">Matrice des permissions</h2>
+          <Shield className="h-4 w-4 text-[#254C8C]" />
+          <h2 className="font-semibold text-sm text-foreground">Matrice des permissions</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -515,7 +513,7 @@ export default function AdminSettings() {
                 { module: 'Administration',       admin: true,  superviseur: false, operateur: false, technicien: false },
               ].map((row) => (
                 <tr key={row.module} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="px-4 py-2.5 text-sm text-[#212121] font-medium">{row.module}</td>
+                  <td className="px-4 py-2.5 text-sm text-foreground font-medium">{row.module}</td>
                   {(['admin', 'superviseur', 'operateur', 'technicien'] as const).map((role) => (
                     <td key={role} className="px-4 py-2.5 text-center">
                       {row[role]
@@ -541,6 +539,19 @@ export default function AdminSettings() {
         <UserManagement />
       )}
 
+      {/* ── Onglet : Profils métier prestataires ── */}
+      {adminTab === 'Prestataires' && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Profils prestataires</h2>
+            <p className="text-sm text-gray-500">
+              Les prestataires sont des profils métier externes. Leur accès au réseau est piloté par leur statut.
+            </p>
+          </div>
+          <Prestataires />
+        </div>
+      )}
+
       {/* ── Onglet : Matrice des permissions ── */}
       {adminTab === 'Permissions' && (
         <div className="space-y-4">
@@ -548,7 +559,7 @@ export default function AdminSettings() {
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs font-semibold uppercase text-gray-500">Rôle :</span>
-              {FORGE_ROLES.map((r, idx) => (
+              {RBAC_ROLES.map((r, idx) => (
                 <button
                   key={r.name}
                   onClick={() => setPermRoleIdx(idx)}
@@ -565,8 +576,8 @@ export default function AdminSettings() {
             </div>
           </div>
           <PermissionsMatrix
-            rbacName={FORGE_ROLES[permRoleIdx].name}
-            label={FORGE_ROLES[permRoleIdx].label}
+            rbacName={RBAC_ROLES[permRoleIdx].name}
+            label={RBAC_ROLES[permRoleIdx].label}
           />
         </div>
       )}
@@ -579,6 +590,11 @@ export default function AdminSettings() {
       {/* ── Onglet : Paramètres de sécurité ── */}
       {adminTab === 'Sécurité' && (
         <SecuritySettings />
+      )}
+
+      {/* ── Onglet : Paramètres métier (categories_services / sla_config / commission_config) ── */}
+      {adminTab === 'Paramètres métier' && (
+        <ParametresMetier />
       )}
 
     </motion.div>

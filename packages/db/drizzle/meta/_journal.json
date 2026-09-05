@@ -29,6 +29,153 @@
       "when": 1786886500000,
       "tag": "0003_audit_log_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787412657539,
+      "tag": "0004_fix_service_role_triggers",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787415430828,
+      "tag": "0005_fix_service_role_check_v2",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787472979578,
+      "tag": "0006_acoustic_clea",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787507685615,
+      "tag": "0007_careful_norman_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787508784750,
+      "tag": "0008_clear_impossible_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787508822587,
+      "tag": "0009_intervention_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787548027440,
+      "tag": "0010_commission_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787548500000,
+      "tag": "0011_commission_calculee",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787593128674,
+      "tag": "0012_sla_config",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787593400000,
+      "tag": "0013_sla_config_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787766808780,
+      "tag": "0014_petite_speed_demon",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787766921537,
+      "tag": "0015_demandes_delai_cible_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1787943235869,
+      "tag": "0016_tired_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787943369333,
+      "tag": "0017_sla_config_seuil_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1788357571703,
+      "tag": "0019_reversements_date_paiement",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788357700000,
+      "tag": "0020_fix_rls_recursion_demandes_matchings",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1788624000000,
+      "tag": "0021_rbac_user_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1788627600000,
+      "tag": "0022_profiles_adresse",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1788631200000,
+      "tag": "0023_sync_legacy_rbac_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788634800000,
+      "tag": "0024_rbac_maideres_enum_values",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788638400000,
+      "tag": "0025_rbac_maideres_roles",
+      "breakpoints": true
     }
   ]
 }

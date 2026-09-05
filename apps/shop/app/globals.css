@@ -5,6 +5,7 @@
 @layer base {
   :root {
     --font-inter: 'Inter', sans-serif;
+    --font-poppins: 'Poppins', sans-serif;
     --font-jetbrains-mono: 'JetBrains Mono', monospace;
   }
 
@@ -13,19 +14,15 @@
   }
 
   body {
-    @apply font-forge text-forge-dark;
+    @apply font-sans text-brand-ink bg-[#FAF8F5];
   }
 
   * {
-    @apply border-forge-steel-light;
+    @apply border-gray-200;
   }
 }
 
 @layer utilities {
-  .font-forge {
-    font-family: var(--font-inter), sans-serif;
-  }
-
   .font-mono {
     font-family: var(--font-jetbrains-mono), monospace;
   }
@@ -33,7 +30,7 @@
   /* Prix en XAF */
   .price-xaf::after {
     content: ' XAF';
-    @apply text-xs font-normal text-forge-steel;
+    @apply text-xs font-normal text-brand-ink-soft;
   }
 
   /* Masonry layout — natif CSS (pas de JS requis) */

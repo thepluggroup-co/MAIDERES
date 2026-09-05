@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'hono'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from '../types'
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])

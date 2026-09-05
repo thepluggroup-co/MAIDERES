@@ -9,28 +9,28 @@ export default function NotFound() {
       </div>
 
       <span className="font-mono text-6xl font-black text-gray-100">404</span>
-      <h1 className="mt-2 text-2xl font-black text-forge-dark">Page introuvable</h1>
-      <p className="mt-2 max-w-sm text-sm text-forge-steel">
+      <h1 className="mt-2 text-2xl font-black text-brand-ink">Page introuvable</h1>
+      <p className="mt-2 max-w-sm text-sm text-brand-ink-soft">
         Cette page n'existe pas ou a été déplacée. Vérifiez l'URL ou retournez à l'accueil.
       </p>
 
       <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
         <Link
           href="/"
-          className="flex items-center gap-2 rounded-xl bg-forge-red px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700"
+          className="flex items-center gap-2 rounded-xl bg-brand-gold px-5 py-3 text-sm font-bold text-[#4A2F06] transition hover:bg-[#E09A2E]"
         >
           <ArrowLeft size={15} /> Retour à l'accueil
         </Link>
         <Link
           href="/catalogue"
-          className="flex items-center gap-2 rounded-xl border-2 border-forge-red px-5 py-3 text-sm font-bold text-forge-red transition hover:bg-forge-red hover:text-white"
+          className="flex items-center gap-2 rounded-xl border-2 border-brand-indigo px-5 py-3 text-sm font-bold text-brand-indigo transition hover:bg-brand-indigo hover:text-white"
         >
           Voir le catalogue
         </Link>
       </div>
 
       <a
-        href="https://wa.me/237695884528?text=Bonjour TAFDIL"
+        href="https://wa.me/237695884528?text=Bonjour MAIDERES"
         target="_blank"
         rel="noopener noreferrer"
         className="mt-4 flex items-center gap-2 text-sm text-green-600 hover:underline"

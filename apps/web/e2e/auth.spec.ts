@@ -17,7 +17,7 @@ test('E2E-01 — /login affiche le formulaire email/mot de passe', async ({ page
   await expect(submitBtn).toHaveText('Se connecter')
 
   // Placeholder correct
-  await expect(emailInput).toHaveAttribute('placeholder', 'vous@tafdil.cm')
+  await expect(emailInput).toHaveAttribute('placeholder', 'vous@maideres.com')
 })
 
 // ── E2E 2 : Route protégée — redirection vers /login si non authentifié ────────

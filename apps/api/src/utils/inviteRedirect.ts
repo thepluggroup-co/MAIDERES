@@ -11,7 +11,7 @@ export function resolveInviteRedirectUrl(): string | undefined {
 
   const base = candidates[0]?.trim()
   if (!base) {
-    return 'https://forge-tafdil-erp-web.vercel.app/login'
+    return 'https://maideres.vercel.app/login'
   }
 
   const normalizedBase = base.replace(/\/+$/, '')

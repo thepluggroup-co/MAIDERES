@@ -1,5 +1,5 @@
 /**
- * FORGE ERP — Middleware rate-limit connexion
+ * MAIDERES — Middleware rate-limit connexion
  * 5 tentatives / 15 min par email+IP → blocage 30 min.
  * Appeler AVANT le handler de login, SANS authMiddleware.
  */

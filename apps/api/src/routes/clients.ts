@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff } from '../services/identity.service'
@@ -14,7 +14,14 @@ if (!supabaseAdmin) {
 }
 const db = supabaseAdmin!
 
-const CLIENT_FIELDS = 'id, profile_id, nom, telephone, quartier'
+const CLIENT_FIELDS = 'id, profile_id, nom, telephone, quartier, type_client, niu, whatsapp, email, source'
+
+// niu est logiquement requis pour une entité (entreprise/organisation), sans
+// contrainte au niveau base (cf. packages/db/src/schema.pg.ts, colonne niu) —
+// la règle métier vit ici, côté validation d'entrée.
+function requiresNiu(typeClient: string | undefined): boolean {
+  return typeClient === 'entreprise' || typeClient === 'organisation'
+}
 
 // ── GET /api/clients — staff : tout ; sinon : sa propre fiche ────────────────
 clientsRouter.get('/', async (c) => {
@@ -48,11 +55,19 @@ clientsRouter.get('/:id', async (c) => {
 
 // ── POST /api/clients — inscription ───────────────────────────────────────────
 const createSchema = z.object({
-  nom:        z.string().trim().min(1).max(100),
-  telephone:  z.string().trim().min(6).max(30),
-  quartier:   z.string().trim().max(100).nullable().optional(),
-  profile_id: z.string().uuid().optional(), // staff seulement : créer pour un autre profil
-})
+  nom:         z.string().trim().min(1).max(100),
+  telephone:   z.string().trim().min(6).max(30),
+  quartier:    z.string().trim().max(100).nullable().optional(),
+  type_client: z.enum(['particulier', 'entreprise', 'organisation']).default('particulier'),
+  niu:         z.string().trim().max(50).nullable().optional(),
+  whatsapp:    z.string().trim().max(30).nullable().optional(),
+  email:       z.string().trim().email().max(150).nullable().optional(),
+  source:      z.enum(['whatsapp', 'appel', 'ecommerce', 'referral']).default('whatsapp'),
+  profile_id:  z.string().uuid().optional(), // staff seulement : créer pour un autre profil
+}).refine(
+  (body) => !requiresNiu(body.type_client) || Boolean(body.niu?.trim()),
+  { message: 'Le NIU est requis pour une entreprise ou une organisation', path: ['niu'] },
+)
 
 clientsRouter.post('/', zValidator('json', createSchema), async (c) => {
   const user = c.get('user')
@@ -64,7 +79,17 @@ clientsRouter.post('/', zValidator('json', createSchema), async (c) => {
 
   const { data, error } = await db
     .from('clients')
-    .insert({ profile_id: profileId, nom: body.nom, telephone: body.telephone, quartier: body.quartier ?? null })
+    .insert({
+      profile_id:  profileId,
+      nom:         body.nom,
+      telephone:   body.telephone,
+      quartier:    body.quartier ?? null,
+      type_client: body.type_client,
+      niu:         body.niu ?? null,
+      whatsapp:    body.whatsapp ?? null,
+      email:       body.email ?? null,
+      source:      body.source,
+    })
     .select(CLIENT_FIELDS)
     .single()
 
@@ -74,9 +99,14 @@ clientsRouter.post('/', zValidator('json', createSchema), async (c) => {
 
 // ── PATCH /api/clients/:id — staff ou soi-même ────────────────────────────────
 const updateSchema = z.object({
-  nom:       z.string().trim().min(1).max(100).optional(),
-  telephone: z.string().trim().min(6).max(30).optional(),
-  quartier:  z.string().trim().max(100).nullable().optional(),
+  nom:         z.string().trim().min(1).max(100).optional(),
+  telephone:   z.string().trim().min(6).max(30).optional(),
+  quartier:    z.string().trim().max(100).nullable().optional(),
+  type_client: z.enum(['particulier', 'entreprise', 'organisation']).optional(),
+  niu:         z.string().trim().max(50).nullable().optional(),
+  whatsapp:    z.string().trim().max(30).nullable().optional(),
+  email:       z.string().trim().email().max(150).nullable().optional(),
+  source:      z.enum(['whatsapp', 'appel', 'ecommerce', 'referral']).optional(),
 })
 
 clientsRouter.patch('/:id', zValidator('json', updateSchema), async (c) => {
@@ -84,18 +114,30 @@ clientsRouter.patch('/:id', zValidator('json', updateSchema), async (c) => {
   const id = c.req.param('id')
   const body = c.req.valid('json')
 
-  const { data: row, error: findError } = await db.from('clients').select('profile_id').eq('id', id).maybeSingle()
+  const { data: row, error: findError } = await db.from('clients').select('profile_id, type_client, niu').eq('id', id).maybeSingle()
   if (findError) return c.json({ error: findError.message }, 500)
   if (!row) throw new HTTPException(404, { message: 'Client introuvable' })
+  const current = row as { profile_id: string; type_client: string; niu: string | null }
 
-  if (!isStaff(user.role) && (row as { profile_id: string }).profile_id !== user.id) {
+  if (!isStaff(user.role) && current.profile_id !== user.id) {
     throw new HTTPException(403, { message: 'Accès refusé' })
   }
 
+  const finalTypeClient = body.type_client ?? current.type_client
+  const finalNiu        = body.niu !== undefined ? body.niu : current.niu
+  if (requiresNiu(finalTypeClient) && !finalNiu?.trim()) {
+    throw new HTTPException(422, { message: 'Le NIU est requis pour une entreprise ou une organisation' })
+  }
+
   const update: Record<string, unknown> = {}
-  if (body.nom       !== undefined) update.nom = body.nom
-  if (body.telephone !== undefined) update.telephone = body.telephone
-  if (body.quartier  !== undefined) update.quartier = body.quartier
+  if (body.nom         !== undefined) update.nom = body.nom
+  if (body.telephone   !== undefined) update.telephone = body.telephone
+  if (body.quartier    !== undefined) update.quartier = body.quartier
+  if (body.type_client !== undefined) update.type_client = body.type_client
+  if (body.niu         !== undefined) update.niu = body.niu
+  if (body.whatsapp    !== undefined) update.whatsapp = body.whatsapp
+  if (body.email       !== undefined) update.email = body.email
+  if (body.source      !== undefined) update.source = body.source
   if (!Object.keys(update).length) return c.json({ success: true })
 
   const { data, error } = await db.from('clients').update(update).eq('id', id).select(CLIENT_FIELDS).single()

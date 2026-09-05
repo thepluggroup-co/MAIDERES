@@ -30,7 +30,7 @@ export function SuiviSearchClient() {
           onChange={(e) => setRef(e.target.value.toUpperCase())}
           placeholder="WEB-2026-XXXX"
           autoFocus
-          className="w-full rounded-2xl border-2 border-gray-200 py-4 pl-11 pr-5 font-mono text-base font-bold uppercase tracking-widest outline-none transition placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-400 focus:border-forge-red focus:ring-4 focus:ring-forge-red/10"
+          className="w-full rounded-2xl border-2 border-gray-200 py-4 pl-11 pr-5 font-mono text-base font-bold uppercase tracking-widest outline-none transition placeholder:font-normal placeholder:tracking-normal placeholder:text-gray-400 focus:border-brand-indigo focus:ring-4 focus:ring-brand-indigo/10"
         />
       </div>
       <input
@@ -38,14 +38,14 @@ export function SuiviSearchClient() {
         value={telephone}
         onChange={(e) => setTelephone(e.target.value)}
         placeholder="Téléphone client (optionnel)"
-        className="w-full rounded-2xl border-2 border-gray-200 px-5 py-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-forge-red focus:ring-4 focus:ring-forge-red/10"
+        className="w-full rounded-2xl border-2 border-gray-200 px-5 py-4 text-sm outline-none transition placeholder:text-gray-400 focus:border-brand-indigo focus:ring-4 focus:ring-brand-indigo/10"
       />
       <button
         type="submit"
         disabled={!ref.trim()}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-forge-red py-4 text-sm font-bold text-white transition disabled:opacity-50 hover:bg-red-700"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-gold py-4 text-sm font-bold text-[#4A2F06] transition disabled:opacity-50 hover:bg-[#E09A2E]"
       >
-        Suivre ma commande <ArrowRight size={16} />
+        Suivre ma demande <ArrowRight size={16} />
       </button>
       <p className="text-center text-xs text-gray-400">
         La référence figure dans votre SMS de confirmation (format WEB-2026-XXXX)

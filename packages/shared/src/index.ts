@@ -1,4 +1,4 @@
-// FORGE shared types and utilities
+// MAIDERES shared types and utilities
 
 export * from './types'
 export * from './constants'

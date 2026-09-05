@@ -10,8 +10,8 @@
     "android": "cap open android"
   },
   "dependencies": {
-    "@forge/ui": "workspace:*",
-    "@forge/shared": "workspace:*",
+    "@maideres/ui": "workspace:*",
+    "@maideres/shared": "workspace:*",
     "@capacitor/android": "^6.1.0",
     "@capacitor/core": "^6.1.0",
     "@supabase/supabase-js": "^2.105.4",

@@ -16,4 +16,4 @@ export const anthropic = new Proxy({} as Anthropic, {
   },
 })
 
-export const FORGE_MODEL = 'claude-sonnet-4-6'
+export const CLAUDE_MODEL = 'claude-sonnet-4-6'

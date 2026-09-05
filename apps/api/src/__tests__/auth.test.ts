@@ -10,7 +10,7 @@ import { describe, it, expect, vi } from 'vitest'
 import jwt from 'jsonwebtoken'
 import { TEST_JWT_SECRET } from './helpers'
 
-vi.mock('@forge/db/supabase', () => {
+vi.mock('@maideres/db/supabase', () => {
   // Chaîne sûre par défaut — ne crashe jamais, retourne data=[] sans erreur
   const safeChain = () => {
     const c: Record<string, unknown> = {}
@@ -96,7 +96,7 @@ describe('Test 10 — Token invalide ou expiré → 401 INVALID_TOKEN', () => {
     const expiredToken = jwt.sign(
       {
         sub:          'user-expired',
-        email:        'expired@tafdil.cm',
+        email:        'expired@maideres.com',
         app_metadata: { role: 'operateur' },
         aud:          'authenticated',
         exp:          Math.floor(Date.now() / 1000) - 3600, // expiré il y a 1h
@@ -122,7 +122,7 @@ describe('Test 10 — Token invalide ou expiré → 401 INVALID_TOKEN', () => {
     const wrongToken = jwt.sign(
       {
         sub:          'user-wrong-secret',
-        email:        'wrong@tafdil.cm',
+        email:        'wrong@maideres.com',
         app_metadata: { role: 'admin' },
         aud:          'authenticated',
       },
@@ -161,11 +161,31 @@ describe('Test 10 — Token invalide ou expiré → 401 INVALID_TOKEN', () => {
 })
 
 describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
+  it('autorise un administrateur plateforme sur la route admin', async () => {
+    const adminToken = jwt.sign(
+      {
+        sub:          'admin-user',
+        email:        'admin@maideres.com',
+        app_metadata: { role: 'admin' },
+        aud:          'authenticated',
+      },
+      TEST_JWT_SECRET,
+      { expiresIn: '1h' },
+    )
+
+    const res = await app.request(ADMIN_ONLY_GET, {
+      method:  'GET',
+      headers: new Headers({ 'Authorization': `Bearer ${adminToken}` }),
+    })
+
+    expect(res.status).toBe(200)
+  })
+
   it('retourne 403 FORBIDDEN : viewer sur route admin (GET /api/admin/users)', async () => {
     const viewerToken = jwt.sign(
       {
         sub:          'viewer-user',
-        email:        'viewer@tafdil.cm',
+        email:        'viewer@maideres.com',
         app_metadata: { role: 'apprenant' },
         aud:          'authenticated',
       },
@@ -188,7 +208,7 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
     const operateurToken = jwt.sign(
       {
         sub:          'operateur-user',
-        email:        'operateur@tafdil.cm',
+        email:        'operateur@maideres.com',
         app_metadata: { role: 'operateur' },
         aud:          'authenticated',
       },
@@ -207,7 +227,7 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
   })
 
   it('opérateur accède normalement aux routes ouvertes à tous les rôles (GET /api/profile/me)', async () => {
-    const { supabase } = await import('@forge/db/supabase')
+    const { supabase } = await import('@maideres/db/supabase')
     const { mkChain }  = await import('./helpers')
 
     vi.mocked(supabase.from).mockReturnValueOnce(
@@ -217,7 +237,7 @@ describe('Test 11 — Rôle insuffisant → 403 FORBIDDEN', () => {
     const operateurToken = jwt.sign(
       {
         sub:          'operateur-ok',
-        email:        'ok@tafdil.cm',
+        email:        'ok@maideres.com',
         app_metadata: { role: 'operateur' },
         aud:          'authenticated',
       },

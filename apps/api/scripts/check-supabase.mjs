@@ -1,5 +1,5 @@
 /**
- * Diagnostic Supabase — FORGE ERP
+ * Diagnostic Supabase — MAIDERES
  * Usage : node scripts/check-supabase.mjs
  *
  * Vérifie :

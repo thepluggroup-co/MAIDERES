@@ -10,8 +10,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, within, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { DataTable } from '@forge/ui'
-import type { Column } from '@forge/ui'
+import { DataTable } from '@maideres/ui'
+import type { Column } from '@maideres/ui'
 
 afterEach(() => cleanup())
 

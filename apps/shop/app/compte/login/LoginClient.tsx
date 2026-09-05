@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, KeyboardEvent, ClipboardEvent
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, ArrowRight, Loader2, ChevronLeft, ShieldCheck } from 'lucide-react'
-import { MetalForgeLogo } from '@/components/ui/BrandLogo'
+import { MaideresLogo } from '@/components/ui/BrandLogo'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -78,8 +78,8 @@ function OtpInput({ value, onChange }: {
             h-14 w-11 rounded-xl border-2 text-center text-xl font-black tabular-nums
             transition-all duration-150 outline-none
             ${value[i]
-              ? 'border-forge-red bg-red-50 text-forge-red'
-              : 'border-gray-200 bg-white text-forge-dark focus:border-forge-red focus:ring-2 focus:ring-forge-red/20'
+              ? 'border-brand-indigo bg-brand-indigo-light text-brand-indigo'
+              : 'border-gray-200 bg-white text-brand-ink focus:border-brand-indigo focus:ring-2 focus:ring-brand-indigo/20'
             }
           `}
         />
@@ -172,9 +172,9 @@ export function LoginClient() {
     <div className="w-full max-w-sm mx-auto px-4">
       {/* Logo / En-tête */}
       <div className="mb-8 flex flex-col items-center text-center">
-        <MetalForgeLogo size={44} variant="color" />
-        <h1 className="mt-4 text-2xl font-black text-forge-dark">Mon espace client</h1>
-        <p className="mt-1 text-sm text-forge-steel">Connexion par SMS — sans mot de passe</p>
+        <MaideresLogo size={44} variant="color" />
+        <h1 className="mt-4 text-2xl font-black text-brand-ink">Mon espace client</h1>
+        <p className="mt-1 text-sm text-brand-ink-soft">Connexion par SMS — sans mot de passe</p>
       </div>
 
       <AnimatePresence mode="wait" custom={step === 'otp' ? 1 : -1}>
@@ -190,7 +190,7 @@ export function LoginClient() {
             className="space-y-5"
           >
             <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-forge-steel">
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-brand-ink-soft">
                 Numéro de téléphone
               </label>
               <div className="relative">
@@ -206,7 +206,7 @@ export function LoginClient() {
                     setError('')
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
-                  className="w-full rounded-xl border-2 border-gray-200 py-3 pl-10 pr-4 text-base font-semibold outline-none transition focus:border-forge-red focus:ring-2 focus:ring-forge-red/20"
+                  className="w-full rounded-xl border-2 border-gray-200 py-3 pl-10 pr-4 text-base font-semibold outline-none transition focus:border-brand-indigo focus:ring-2 focus:ring-brand-indigo/20"
                 />
               </div>
               <p className="mt-1.5 text-[11px] text-gray-400">Format : 6XX XX XX XX ou +237 6XX XX XX XX</p>
@@ -225,7 +225,7 @@ export function LoginClient() {
               type="button"
               onClick={handleSendOtp}
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-forge-red py-3.5 text-sm font-bold text-white transition disabled:opacity-60 hover:bg-red-700"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-gold py-3.5 text-sm font-bold text-[#4A2F06] transition disabled:opacity-60 hover:bg-[#E09A2E]"
             >
               {loading
                 ? <Loader2 size={17} className="animate-spin" />
@@ -248,7 +248,7 @@ export function LoginClient() {
               <button
                 type="button"
                 onClick={() => { setStep('phone'); setError('') }}
-                className="flex items-center gap-1 text-sm text-forge-steel hover:text-forge-red transition"
+                className="flex items-center gap-1 text-sm text-brand-ink-soft hover:text-brand-magenta transition"
               >
                 <ChevronLeft size={16} /> Changer de numéro
               </button>
@@ -256,10 +256,10 @@ export function LoginClient() {
 
             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
               <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck size={15} className="text-forge-red" />
-                <p className="text-xs font-semibold text-forge-steel">Code envoyé par SMS</p>
+                <ShieldCheck size={15} className="text-brand-indigo" />
+                <p className="text-xs font-semibold text-brand-ink-soft">Code envoyé par SMS</p>
               </div>
-              <p className="text-sm font-bold text-forge-dark">{telephone}</p>
+              <p className="text-sm font-bold text-brand-ink">{telephone}</p>
               {countdown > 0 && (
                 <p className="mt-1 text-[11px] text-gray-400">
                   Expire dans <span className="font-semibold tabular-nums">{Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}</span>
@@ -282,7 +282,7 @@ export function LoginClient() {
               type="button"
               onClick={handleVerifyOtp}
               disabled={loading || otp.join('').length < DIGITS}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-forge-red py-3.5 text-sm font-bold text-white transition disabled:opacity-50 hover:bg-red-700"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-gold py-3.5 text-sm font-bold text-[#4A2F06] transition disabled:opacity-50 hover:bg-[#E09A2E]"
             >
               {loading
                 ? <Loader2 size={17} className="animate-spin" />
@@ -295,7 +295,7 @@ export function LoginClient() {
                 <button
                   type="button"
                   onClick={() => { setStep('phone'); setError('') }}
-                  className="text-sm text-forge-red font-semibold hover:underline"
+                  className="text-sm text-brand-magenta font-semibold hover:underline"
                 >
                   Renvoyer un code
                 </button>

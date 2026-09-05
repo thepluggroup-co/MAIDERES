@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from '../types'
 
 export const profileRouter = new Hono<{ Variables: HonoVariables }>()

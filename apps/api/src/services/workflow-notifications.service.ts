@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 
 const db = supabaseAdmin!
 

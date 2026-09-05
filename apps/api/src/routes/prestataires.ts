@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff, ownPrestataireId } from '../services/identity.service'
@@ -114,7 +114,8 @@ const updateSchema = z.object({
   quartier:    z.string().trim().max(100).nullable().optional(),
   geoloc_lat:  z.number().min(-90).max(90).nullable().optional(),
   geoloc_lng:  z.number().min(-180).max(180).nullable().optional(),
-  taux_commission: z.number().min(0).max(100).optional(), // staff seulement
+  // staff seulement. null = retirer l'override (revenir à commission_config).
+  taux_commission: z.number().min(0).max(100).nullable().optional(),
 })
 
 prestatairesRouter.patch('/:id', zValidator('json', updateSchema), async (c) => {
@@ -141,7 +142,9 @@ prestatairesRouter.patch('/:id', zValidator('json', updateSchema), async (c) => 
   if (body.quartier        !== undefined) update.quartier = body.quartier
   if (body.geoloc_lat      !== undefined) update.geoloc_lat = body.geoloc_lat
   if (body.geoloc_lng      !== undefined) update.geoloc_lng = body.geoloc_lng
-  if (staff && body.taux_commission !== undefined) update.taux_commission = String(body.taux_commission)
+  if (staff && body.taux_commission !== undefined) {
+    update.taux_commission = body.taux_commission === null ? null : String(body.taux_commission)
+  }
 
   if (!Object.keys(update).length) return c.json({ success: true })
 

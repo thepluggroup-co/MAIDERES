@@ -51,7 +51,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
               >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-                  <Dialog.Title className="text-base font-semibold text-[#212121]">
+                  <Dialog.Title className="text-base font-semibold text-[#1F2430]">
                     {title}
                   </Dialog.Title>
                   <Dialog.Close

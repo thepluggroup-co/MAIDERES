@@ -1,5 +1,5 @@
 /**
- * Clients Supabase pour FORGE ERP.
+ * Clients Supabase pour MAIDERES.
  *
  * supabase      — client public (anon key) : utilisé côté frontend et API publique.
  * supabaseAdmin — client service role      : réservé au backend / workers.
@@ -16,7 +16,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.en
 const realtimeTransport = WebSocket as never
 
 if (!SUPABASE_URL) {
-  console.warn('[FORGE/db] SUPABASE_URL manquant — client Supabase non initialisé.')
+  console.warn('[MAIDERES/db] SUPABASE_URL manquant — client Supabase non initialisé.')
 }
 
 // ── Client public (anon) ──────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     transport: realtimeTransport,
   },
   global: {
-    headers: { 'x-app-name': 'FORGE-ERP' },
+    headers: { 'x-app-name': 'MAIDERES' },
   },
 })
 

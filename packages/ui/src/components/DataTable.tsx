@@ -171,12 +171,12 @@ export function DataTable<T extends object>({
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg
-              focus:outline-none focus:ring-2 focus:ring-[#C62828] focus:border-transparent"
+              focus:outline-none focus:ring-2 focus:ring-[#254C8C] focus:border-transparent"
           />
         </div>
         <div className="flex items-center gap-2">
           {selected.size > 0 && (
-            <span className="text-xs text-[#C62828] font-medium">{selected.size} sélectionné(s)</span>
+            <span className="text-xs text-[#254C8C] font-medium">{selected.size} sélectionné(s)</span>
           )}
           <button
             onClick={() => exportCsv(columns, exportRows)}
@@ -196,7 +196,7 @@ export function DataTable<T extends object>({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ backgroundColor: '#C62828' }}>
+            <tr style={{ backgroundColor: '#254C8C' }}>
               <th className="px-4 py-3 w-10">
                 <input
                   type="checkbox"
@@ -244,21 +244,21 @@ export function DataTable<T extends object>({
                     key={key}
                     onClick={() => onRowClick?.(row)}
                     className={`transition-colors ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
-                      ${onRowClick ? 'cursor-pointer hover:bg-[#FFEBEE]' : ''}
-                      ${isSelected ? 'bg-[#FFEBEE]' : ''}`}
+                      ${onRowClick ? 'cursor-pointer hover:bg-[#E4EAF4]' : ''}
+                      ${isSelected ? 'bg-[#E4EAF4]' : ''}`}
                   >
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleRow(absIdx)}
-                        className="rounded border-gray-300 text-[#C62828] focus:ring-[#C62828]"
+                        className="rounded border-gray-300 text-[#254C8C] focus:ring-[#254C8C]"
                       />
                     </td>
                     {columns.map((col) => {
                       const raw = getCellValue(row, col.accessor)
                       return (
-                        <td key={col.id} className="px-4 py-3 text-[#212121]">
+                        <td key={col.id} className="px-4 py-3 text-[#1F2430]">
                           {col.render ? col.render(raw, row) : String(raw ?? '—')}
                         </td>
                       )
@@ -282,7 +282,7 @@ export function DataTable<T extends object>({
               setPageSize(value)
               setPage(1)
             }}
-            className="border border-gray-200 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#C62828]"
+            className="border border-gray-200 rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#254C8C]"
           >
             {pageSizeOptions.map((n) => <option key={n} value={n}>{n === 'all' ? 'Toutes' : n}</option>)}
           </select>
@@ -293,7 +293,7 @@ export function DataTable<T extends object>({
             className="px-2 py-1 rounded-md hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">«</button>
           <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
             className="px-2 py-1 rounded-md hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">‹</button>
-          <span className="px-3 font-medium text-[#212121]">{page} / {totalPages}</span>
+          <span className="px-3 font-medium text-[#1F2430]">{page} / {totalPages}</span>
           <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}
             className="px-2 py-1 rounded-md hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">›</button>
           <button onClick={() => setPage(totalPages)} disabled={page === totalPages}

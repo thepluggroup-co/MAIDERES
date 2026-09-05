@@ -1,0 +1,1 @@
+ALTER TYPE "demande_statut" ADD VALUE 'en_cours';

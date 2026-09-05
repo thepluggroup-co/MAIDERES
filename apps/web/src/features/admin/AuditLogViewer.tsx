@@ -4,7 +4,7 @@ import {
   Shield, Download, Filter, ChevronLeft, ChevronRight,
   X, Eye, AlertCircle, CheckCircle, LogIn, LogOut,
 } from 'lucide-react'
-import { Button } from '@forge/ui'
+import { Button } from '@maideres/ui'
 import {
   useAuditLogs,
   useAuditLogDetail,
@@ -33,6 +33,7 @@ const ACTION_LABELS: Record<AuditActionType, string> = {
   USER_CREATED:       'Utilisateur créé',
   USER_UPDATED:       'Utilisateur modifié',
   USER_DEACTIVATED:   'Utilisateur désactivé',
+  USER_DELETED:       'Utilisateur supprimé',
   ROLE_CHANGED:       'Rôle changé',
   PERMISSION_CHANGED: 'Permission modifiée',
   SETTINGS_CHANGED:   'Paramètres modifiés',
@@ -46,8 +47,9 @@ const ACTION_LABELS: Record<AuditActionType, string> = {
 }
 
 const MODULES: RbacModule[] = [
-  'STOCK', 'COMMERCIAL', 'FINANCE', 'HR',
-  'PRODUCTION', 'LOGISTICS', 'ADMIN', 'REPORTS', 'RECEIVABLES',
+  'DEMANDES', 'MATCHING', 'PRESTATAIRES', 'CLIENTS',
+  'INTERVENTIONS', 'TRANSACTIONS', 'REVERSEMENTS',
+  'PARAMETRAGE', 'UTILISATEURS', 'REPORTS', 'AUDIT',
 ]
 
 // ── JsonDiff ──────────────────────────────────────────────────────────────────

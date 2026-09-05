@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from './types'
 import { authMiddleware } from './middleware/auth'
 import { auditMiddleware } from './middleware/audit'
@@ -13,7 +13,12 @@ import { prestatairesRouter } from './routes/prestataires'
 import { clientsRouter } from './routes/clients'
 import { demandesRouter } from './routes/demandes'
 import { matchingsRouter } from './routes/matchings'
+import { transactionsRouter } from './routes/transactions'
 import { avisRouter } from './routes/avis'
+import { slaConfigRouter } from './routes/sla-config'
+import { commissionConfigRouter } from './routes/commission-config'
+import { interventionsRouter } from './routes/interventions'
+import { reversementsRouter } from './routes/reversements'
 import { HTTPException } from 'hono/http-exception'
 
 const app = new Hono<{ Variables: HonoVariables }>()
@@ -92,7 +97,12 @@ api.route('/prestataires',        prestatairesRouter)
 api.route('/clients',             clientsRouter)
 api.route('/demandes',            demandesRouter)
 api.route('/matchings',           matchingsRouter)
+api.route('/transactions',        transactionsRouter)
 api.route('/avis',                avisRouter)
+api.route('/sla_config',          slaConfigRouter)
+api.route('/commission_config',   commissionConfigRouter)
+api.route('/interventions',       interventionsRouter)
+api.route('/reversements',        reversementsRouter)
 
 app.route('/api', api)
 

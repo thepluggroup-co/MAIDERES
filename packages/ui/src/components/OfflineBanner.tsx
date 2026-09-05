@@ -25,7 +25,7 @@ export function OfflineBanner() {
           exit={{ y: -40, opacity: 0 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
           className="fixed top-0 inset-x-0 z-[9999] flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-white"
-          style={{ backgroundColor: '#C62828' }}
+          style={{ backgroundColor: '#A32D2D' }}
         >
           <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round"

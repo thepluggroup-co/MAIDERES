@@ -21,21 +21,21 @@ export default function SuiviError({
         <AlertTriangle size={32} className="mx-auto text-amber-500" />
       </div>
       <div>
-        <h2 className="text-lg font-black text-forge-dark">Commande inaccessible</h2>
-        <p className="mt-1 text-sm text-forge-steel">
+        <h2 className="text-lg font-black text-brand-ink">Commande inaccessible</h2>
+        <p className="mt-1 text-sm text-brand-ink-soft">
           Impossible de charger les informations de cette commande. Vérifiez la référence ou réessayez.
         </p>
       </div>
       <div className="flex gap-3">
         <button
           onClick={reset}
-          className="flex items-center gap-2 rounded-xl bg-forge-red px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700 transition"
+          className="flex items-center gap-2 rounded-xl bg-brand-gold px-4 py-2.5 text-sm font-bold text-[#4A2F06] hover:bg-[#E09A2E] transition"
         >
           <RefreshCw size={14} /> Réessayer
         </button>
         <Link
           href="/suivi"
-          className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-forge-steel hover:border-forge-red hover:text-forge-red transition"
+          className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-brand-ink-soft hover:border-brand-indigo hover:text-brand-indigo transition"
         >
           <Search size={14} /> Autre référence
         </Link>

@@ -7,18 +7,18 @@ export const FRAIS_LIVRAISON = {
 } as const
 
 export const APP_NAME = 'FORGE'
-export const COMPANY_NAME = 'TAFDIL'
+export const COMPANY_NAME = 'MAIDERES'
 export const COMPANY_LOCATION = 'Douala, Cameroun'
 export const CURRENCY = 'XAF'
 export const CURRENCY_SYMBOL = 'FCFA'
 
 /**
- * Adresse physique de la boutique de retrait TAFDIL.
+ * Adresse physique de la boutique de retrait MAIDERES.
  * Affichée au client lors d'un mode de livraison "retrait_boutique"
  * et utilisée dans les notifications (SMS / email) de confirmation.
  */
 export const BOUTIQUE_RETRAIT = {
-  nom:    'TAFDIL — Accueil & Showroom',
+  nom:    'MAIDERES — Accueil & Showroom',
   ligne1: 'Carrefour Maeti — Zone industrielle',
   ligne2: 'Entrée face à la station Total',
   ville:  'Douala',

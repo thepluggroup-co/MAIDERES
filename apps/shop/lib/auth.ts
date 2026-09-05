@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose'
 const JWT_SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET ?? 'dev-secret-change-in-production-32chars-min'
 )
-const COOKIE_NAME = 'forge-shop-token'
+const COOKIE_NAME = 'maideres-shop-token'
 const TOKEN_TTL   = '30d'
 
 export interface ShopTokenPayload extends JWTPayload {

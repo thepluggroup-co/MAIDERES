@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import app from './app'
 
 const port = Number(process.env.PORT ?? 3001)

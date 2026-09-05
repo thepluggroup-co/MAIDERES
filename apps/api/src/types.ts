@@ -1,5 +1,5 @@
 /**
- * Types partagés pour l'application Hono FORGE API.
+ * Types partagés pour l'application Hono MAIDERES API.
  */
 
 export interface ForgeUser {

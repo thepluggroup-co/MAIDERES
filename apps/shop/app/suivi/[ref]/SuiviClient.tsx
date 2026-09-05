@@ -37,7 +37,7 @@ type SmsStatus = {
 
 // ── Constantes ─────────────────────────────────────────────────────────────────
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://shop.tafdil.cm'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://maideres.vercel.app'
 const WA_TEL   = '237695884528'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -116,11 +116,11 @@ function StepCircle({ status }: { status: StepStatus }) {
   }
   if (status === 'active') {
     return (
-      <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-forge-red shadow-sm">
+      <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-status-info shadow-sm">
         <motion.div
           animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute inset-0 rounded-full bg-forge-red"
+          className="absolute inset-0 rounded-full bg-status-info"
         />
         <Circle size={12} className="relative text-white" fill="white" />
       </div>
@@ -151,7 +151,7 @@ function FakeProgressBar({ active }: { active: boolean }) {
   return (
     <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
       <motion.div
-        className="h-full rounded-full bg-forge-red"
+        className="h-full rounded-full bg-status-info"
         initial={{ width: '0%' }}
         animate={{ width: active ? '75%' : '0%' }}
         transition={{ duration: 3, ease: 'easeOut' }}
@@ -181,7 +181,7 @@ function ShareButton({ commandeRef }: { commandeRef: string }) {
   return (
     <button
       onClick={handleShare}
-      className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-forge-steel transition hover:border-forge-red hover:text-forge-red"
+      className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-brand-ink-soft transition hover:border-brand-magenta hover:text-brand-magenta"
     >
       {copied ? <Check size={13} className="text-green-500" /> : <Share2 size={13} />}
       {copied ? 'Copié !' : 'Partager'}
@@ -271,7 +271,7 @@ export function SuiviClient({ commandeRef, initialCommande }: {
   const lignesHt = commande.lignes.reduce((s, l) => s + (l.total_ht ?? l.quantite * l.prix_unitaire), 0)
   const montant_ht = Math.round(Number(commande.montant_ht ?? lignesHt))
   const tva        = Math.round(Number(commande.tva ?? montant_ht * 0.1925))
-  const waUrl      = `https://wa.me/${WA_TEL}?text=${encodeURIComponent(`Bonjour TAFDIL, je souhaite des informations sur ma commande *${commandeRef}*.`)}`
+  const waUrl      = `https://wa.me/${WA_TEL}?text=${encodeURIComponent(`Bonjour MAIDERES, je souhaite des informations sur ma commande *${commandeRef}*.`)}`
 
   return (
     <div className="space-y-6">
@@ -280,19 +280,19 @@ export function SuiviClient({ commandeRef, initialCommande }: {
         <div>
           <Link
             href="/suivi"
-            className="mb-2 flex items-center gap-1 text-xs text-forge-steel hover:text-forge-red transition"
+            className="mb-2 flex items-center gap-1 text-xs text-brand-ink-soft hover:text-brand-magenta transition"
           >
             <ChevronLeft size={14} /> Autre commande
           </Link>
-          <p className="font-mono text-xs font-bold uppercase tracking-[.15em] text-forge-steel">
+          <p className="font-mono text-xs font-bold uppercase tracking-[.15em] text-brand-ink-soft">
             Commande
           </p>
-          <h1 className="mt-0.5 font-mono text-2xl font-black text-forge-dark">{commandeRef}</h1>
+          <h1 className="mt-0.5 font-mono text-2xl font-black text-brand-ink">{commandeRef}</h1>
           <p className="mt-1 text-xs text-gray-400">{fmtDateHeure(commande.created_at)}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <ShareButton commandeRef={commandeRef} />
-          <p className="text-right text-xl font-black text-forge-red">{fmt(commande.montant_ttc)}</p>
+          <p className="text-right text-xl font-black text-brand-magenta">{fmt(commande.montant_ttc)}</p>
         </div>
       </div>
 
@@ -310,7 +310,7 @@ export function SuiviClient({ commandeRef, initialCommande }: {
 
       {/* ── Timeline ── */}
       <div className="rounded-2xl border border-gray-100 bg-white p-5">
-        <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-forge-steel">
+        <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-brand-ink-soft">
           Avancement
         </p>
 
@@ -326,7 +326,7 @@ export function SuiviClient({ commandeRef, initialCommande }: {
                 <div className="flex-1 pb-1 pt-1.5">
                   <p className={`text-sm font-bold leading-tight ${
                     status === 'done'   ? 'text-green-700' :
-                    status === 'active' ? 'text-forge-red' :
+                    status === 'active' ? 'text-status-info' :
                     'text-gray-400'
                   }`}>
                     {step.label}
@@ -351,7 +351,7 @@ export function SuiviClient({ commandeRef, initialCommande }: {
                         {step.id === 'paiement' && status === 'done' && (
                           <div className="mt-1 space-y-0.5 text-xs text-gray-500">
                             {commande.mode_paiement && (
-                              <p>Mode : <span className="font-semibold text-forge-dark">{MODE_LABEL[commande.mode_paiement] ?? commande.mode_paiement}</span></p>
+                              <p>Mode : <span className="font-semibold text-brand-ink">{MODE_LABEL[commande.mode_paiement] ?? commande.mode_paiement}</span></p>
                             )}
                             {commande.payment_reference && (
                               <p className="font-mono text-[10px] text-gray-400">Réf. Notchpay : {commande.payment_reference}</p>
@@ -359,12 +359,12 @@ export function SuiviClient({ commandeRef, initialCommande }: {
                           </div>
                         )}
                         {step.id === 'paiement' && status === 'active' && (
-                          <p className="mt-1 text-xs text-forge-red">En attente de confirmation du paiement…</p>
+                          <p className="mt-1 text-xs text-status-info">En attente de confirmation du paiement…</p>
                         )}
 
                         {step.id === 'production' && status === 'active' && (
                           <div className="mt-1">
-                            <p className="text-xs text-gray-500">Délai estimé : <span className="font-semibold text-forge-dark">2–5 jours ouvrables</span></p>
+                            <p className="text-xs text-gray-500">Délai estimé : <span className="font-semibold text-brand-ink">2–5 jours ouvrables</span></p>
                             <FakeProgressBar active />
                           </div>
                         )}
@@ -382,7 +382,7 @@ export function SuiviClient({ commandeRef, initialCommande }: {
                         {step.id === 'livree' && status === 'done' && (
                           <div className="mt-1 space-y-2">
                             <p className="text-xs text-gray-500">
-                              Livrée le <span className="font-semibold text-forge-dark">{fmtDate(commande.updated_at)}</span> — Merci pour votre confiance !
+                              Livrée le <span className="font-semibold text-brand-ink">{fmtDate(commande.updated_at)}</span> — Merci pour votre confiance !
                             </p>
                             {commande.photos_livraison && commande.photos_livraison.length > 0 && (
                               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -412,17 +412,17 @@ export function SuiviClient({ commandeRef, initialCommande }: {
 
       {/* ── Détail commande ── */}
       <div className="rounded-2xl border border-gray-100 bg-white p-5">
-        <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-forge-steel">
+        <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-brand-ink-soft">
           Produits commandés
         </p>
         <div className="space-y-2">
           {commande.lignes.map((l, i) => (
             <div key={i} className="flex items-center justify-between gap-3 text-sm">
               <div className="min-w-0">
-                <p className="truncate font-semibold text-forge-dark">{l.designation}</p>
+                <p className="truncate font-semibold text-brand-ink">{l.designation}</p>
                 <p className="text-[11px] text-gray-400">{l.quantite} × {fmt(l.prix_unitaire)}</p>
               </div>
-              <p className="flex-shrink-0 font-bold text-forge-dark">
+              <p className="flex-shrink-0 font-bold text-brand-ink">
                 {fmt(l.quantite * l.prix_unitaire)}
               </p>
             </div>
@@ -444,9 +444,9 @@ export function SuiviClient({ commandeRef, initialCommande }: {
               <span>{fmt(commande.frais_livraison)}</span>
             </div>
           )}
-          <div className="flex justify-between pt-1 text-sm font-black text-forge-dark">
+          <div className="flex justify-between pt-1 text-sm font-black text-brand-ink">
             <span>Total TTC</span>
-            <span className="text-forge-red">{fmt(commande.montant_ttc)}</span>
+            <span className="text-brand-magenta">{fmt(commande.montant_ttc)}</span>
           </div>
         </div>
       </div>
@@ -460,20 +460,20 @@ export function SuiviClient({ commandeRef, initialCommande }: {
       {/* ── Contact ── */}
       <div className="space-y-3">
         <div className="rounded-2xl border border-gray-100 bg-white p-4 text-left">
-          <p className="text-sm font-black text-forge-dark">Recevoir le lien de suivi par SMS</p>
-          <p className="mt-0.5 text-xs text-forge-steel">Saisissez le téléphone utilisé lors de la commande.</p>
+          <p className="text-sm font-black text-brand-ink">Recevoir le lien de suivi par SMS</p>
+          <p className="mt-0.5 text-xs text-brand-ink-soft">Saisissez le téléphone utilisé lors de la commande.</p>
           <div className="mt-3 flex gap-2">
             <input
               value={smsPhone}
               onChange={(e) => setSmsPhone(e.target.value)}
               placeholder="+237 677 123 456"
-              className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-forge-red focus:ring-2 focus:ring-forge-red/10"
+              className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-brand-indigo focus:ring-2 focus:ring-brand-indigo/10"
             />
             <button
               type="button"
               onClick={handleResendSms}
               disabled={smsLoading || smsCooldown > 0 || smsPhone.replace(/\D/g, '').length < 8}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-forge-red px-4 py-2 text-sm font-bold text-white transition hover:bg-forge-red-dark disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-gold px-4 py-2 text-sm font-bold text-[#4A2F06] transition hover:bg-[#E09A2E] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {smsLoading && <Loader2 size={14} className="animate-spin" />}
               {smsCooldown > 0 ? `${smsCooldown}s` : 'Renvoyer'}
@@ -496,7 +496,7 @@ export function SuiviClient({ commandeRef, initialCommande }: {
         </a>
         <Link
           href="/catalogue"
-          className="block text-center text-sm text-forge-steel transition hover:text-forge-red"
+          className="block text-center text-sm text-brand-ink-soft transition hover:text-brand-magenta"
         >
           ← Retourner au catalogue
         </Link>

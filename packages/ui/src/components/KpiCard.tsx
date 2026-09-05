@@ -13,12 +13,12 @@ export interface KpiCardProps {
 }
 
 const trendConfig = {
-  up: { color: '#16a34a', bg: '#dcfce7', arrow: '↑' },
-  down: { color: '#dc2626', bg: '#fee2e2', arrow: '↓' },
-  neutral: { color: '#6b7280', bg: '#f3f4f6', arrow: '→' },
+  up: { color: '#3B6D11', bg: '#EAF3DE', arrow: '↑' },
+  down: { color: '#A32D2D', bg: '#FCEBEB', arrow: '↓' },
+  neutral: { color: '#5F5E5A', bg: '#F1EEE9', arrow: '→' },
 }
 
-export function KpiCard({ title, value, unit, trend, trendValue, icon, color = '#C62828', delay = 0 }: KpiCardProps) {
+export function KpiCard({ title, value, unit, trend, trendValue, icon, color = '#F2A93B', delay = 0 }: KpiCardProps) {
   const t = trend ? trendConfig[trend] : null
 
   return (
@@ -40,7 +40,7 @@ export function KpiCard({ title, value, unit, trend, trendValue, icon, color = '
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
         <div className="flex min-w-0 items-baseline gap-1 mt-0.5">
-          <span className="min-w-0 max-w-full truncate whitespace-nowrap text-xl font-bold text-[#212121] tabular-nums leading-tight">{value}</span>
+          <span className="min-w-0 max-w-full truncate whitespace-nowrap text-xl font-bold text-[#1F2430] tabular-nums leading-tight">{value}</span>
           {unit && <span className="shrink-0 text-sm font-medium text-gray-400">{unit}</span>}
         </div>
 

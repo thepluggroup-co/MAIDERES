@@ -34,7 +34,7 @@ export function makeToken(
   return jwt.sign(
     {
       sub: userId,
-      email: 'test@tafdil.cm',
+      email: 'test@maideres.com',
       app_metadata: { role },
       aud: 'authenticated',
     },

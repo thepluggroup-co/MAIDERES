@@ -1,6 +1,7 @@
-// FORGE Design System — composants partagés
+// MAIDERES Design System — composants partagés
 
 export * from './components/Button'
+export * from './components/Badge'
 export * from './components/KpiCard'
 export * from './components/DataTable'
 export * from './components/StatusBadge'

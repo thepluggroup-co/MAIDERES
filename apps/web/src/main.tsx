@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { BrowserRouter, MemoryRouter } from 'react-router-dom'
 import App from './App'
 import { setupRealtime } from './lib/realtime'
+import { PREVIEW_MODE } from './lib/preview-mode'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -22,7 +23,12 @@ const queryClient = new QueryClient({
 
 function RealtimeSetup() {
   const qc = useQueryClient()
-  useEffect(() => setupRealtime(qc), [qc])
+  useEffect(() => {
+    // Pas de session/DB réelle en mode aperçu — inutile de tenter une
+    // connexion websocket Supabase qui échouerait de toute façon.
+    if (PREVIEW_MODE) return
+    return setupRealtime(qc)
+  }, [qc])
   return null
 }
 

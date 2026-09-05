@@ -11,17 +11,33 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        forge: {
-          red: '#C62828',
-          'red-dark': '#B71C1C',
-          'red-light': '#FFEBEE',
-          dark: '#212121',
-          steel: '#37474F',
-          'steel-light': '#ECEFF1',
+        brand: {
+          magenta: '#A82D7E',
+          'magenta-dark': '#7A1F5C',
+          'magenta-light': '#F7E4F0',
+          indigo: '#254C8C',
+          'indigo-dark': '#1B3D6E',
+          'indigo-light': '#E4EAF4',
+          gold: '#F2A93B',
+          'gold-dark': '#5A3E08',
+          'gold-light': '#FDEFD6',
+          ink: '#1F2430',
+          'ink-soft': '#5F5E5A',
+        },
+        status: {
+          success: '#3B6D11',
+          'success-bg': '#EAF3DE',
+          warning: '#854F0B',
+          'warning-bg': '#FAEEDA',
+          info: '#185FA5',
+          'info-bg': '#E6F1FB',
+          error: '#A32D2D',
+          'error-bg': '#FCEBEB',
         },
       },
       fontFamily: {
-        forge: ['Inter', 'sans-serif'],
+        display: ['Poppins', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {

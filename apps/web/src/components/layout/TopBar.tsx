@@ -1,13 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
-import { Bell, Search, Wifi, WifiOff, Menu, ChevronLeft, ChevronRight, Settings, LogOut, X } from 'lucide-react'
+import { Bell, Search, Wifi, WifiOff, Menu, Settings, LogOut, X } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { OfflineBanner } from '@forge/ui'
+import { OfflineBanner } from '@maideres/ui'
 
 const ROUTE_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard',
-  account:   'Mon compte',
-  admin:     'Administration',
+  dashboard:      'Tableau de bord',
+  demandes:       'Demandes',
+  dispatch:       'Dispatch',
+  interventions:  'Interventions',
+  reversements:   'Reversements',
+  clients:        'Clients',
+  prestataires:   'Prestataires',
+  account:        'Mon compte',
+  admin:          'Paramètres',
 }
 
 // ── Notification panel ─────────────────────────────────────────────────────────
@@ -16,21 +22,21 @@ const ROUTE_LABELS: Record<string, string> = {
 function NotificationsPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="absolute right-0 top-full mt-2 w-96 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden"
+      className="absolute right-0 top-full mt-2 w-96 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-[#C62828]" />
-          <span className="font-semibold text-sm text-[#212121]">Notifications</span>
+          <Bell className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Notifications</span>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
           <X className="h-4 w-4" />
         </button>
       </div>
       <div className="max-h-80 overflow-y-auto">
-        <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-          <Bell className="h-8 w-8 mb-2 text-gray-200" />
+        <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+          <Bell className="h-8 w-8 mb-2 opacity-40" />
           <p className="text-sm">Aucune notification</p>
         </div>
       </div>
@@ -47,7 +53,7 @@ const ROLE_LABELS: Record<string, string> = {
   technicien:  'Technicien',
 }
 
-function UserDropdown({ email, displayName, initial, onClose }: { email: string; displayName: string; initial: string; onClose: () => void }) {
+function UserDropdown({ email, displayName, onClose }: { email: string; displayName: string; onClose: () => void }) {
   const navigate  = useNavigate()
   const { signOut, role } = useAuth()
 
@@ -58,26 +64,23 @@ function UserDropdown({ email, displayName, initial, onClose }: { email: string;
 
   return (
     <div
-      className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden"
+      className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="px-4 py-3 border-b border-gray-100">
-        <p className="text-sm font-semibold text-[#212121] truncate">{displayName}</p>
-        <p className="text-xs text-gray-400 truncate mt-0.5">{email}</p>
-        <span
-          className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full"
-          style={{ color: '#C62828', backgroundColor: '#FFEBEE' }}
-        >
+      <div className="px-4 py-3 border-b border-border">
+        <p className="text-sm font-semibold truncate">{displayName}</p>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">{email}</p>
+        <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">
           {roleLabel}
         </span>
       </div>
       <div className="py-1">
         <button onClick={() => go('/account')}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-          <Settings className="h-3.5 w-3.5 text-gray-400" /> Mon compte
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-foreground/80 hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Settings className="h-3.5 w-3.5 text-muted-foreground" /> Mon compte
         </button>
         <button onClick={handleSignOut}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-[#C62828] hover:bg-red-50 transition-colors">
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors">
           <LogOut className="h-3.5 w-3.5" /> Déconnexion
         </button>
       </div>
@@ -89,13 +92,9 @@ function UserDropdown({ email, displayName, initial, onClose }: { email: string;
 
 interface TopBarProps {
   onMobileMenuToggle: () => void
-  /** Desktop sidebar collapsed state — passed from AppShell */
-  sidebarCollapsed?: boolean
-  /** Callback to toggle the desktop sidebar */
-  onSidebarToggle?: () => void
 }
 
-export function TopBar({ onMobileMenuToggle, sidebarCollapsed, onSidebarToggle }: TopBarProps) {
+export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const { user, role, displayName: authName } = useAuth()
   const location = useLocation()
   const segments = location.pathname.split('/').filter(Boolean)
@@ -106,7 +105,7 @@ export function TopBar({ onMobileMenuToggle, sidebarCollapsed, onSidebarToggle }
   const notifsRef = useRef<HTMLDivElement>(null)
   const userRef   = useRef<HTMLDivElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const onOnline  = () => setIsOnline(true)
     const onOffline = () => setIsOnline(false)
     window.addEventListener('online', onOnline)
@@ -149,40 +148,24 @@ export function TopBar({ onMobileMenuToggle, sidebarCollapsed, onSidebarToggle }
 
   return (
     <>
-      <header
-        className="shrink-0 z-40 flex items-center gap-3 px-4 md:px-5 border-b border-gray-100 bg-white"
-        style={{ height: 64, boxShadow: '0 1px 3px 0 rgba(0,0,0,0.06)' }}
-      >
+      <header className="shrink-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/95 px-3 backdrop-blur sm:px-4 lg:px-5">
         {/* Mobile: hamburger */}
         <button
           onClick={onMobileMenuToggle}
-          className="flex md:hidden items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100"
+          className="flex lg:hidden items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         >
           <Menu className="h-5 w-5" />
         </button>
-
-        {/* Desktop: sidebar collapse toggle */}
-        {onSidebarToggle && (
-          <button
-            onClick={onSidebarToggle}
-            title={sidebarCollapsed ? 'Déplier la navigation' : 'Réduire la navigation'}
-            className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors shrink-0"
-          >
-            {sidebarCollapsed
-              ? <ChevronRight className="h-4 w-4" />
-              : <ChevronLeft  className="h-4 w-4" />}
-          </button>
-        )}
 
         {/* Breadcrumb */}
         <nav className="hidden md:flex items-center gap-1 text-sm flex-1 min-w-0">
           {breadcrumbs.map((crumb, i) => (
             <React.Fragment key={crumb.path}>
-              {i > 0 && <span className="text-gray-300 mx-1">/</span>}
+              {i > 0 && <span className="text-muted-foreground/50 mx-1">/</span>}
               {i === breadcrumbs.length - 1 ? (
-                <span className="font-semibold text-[#212121] truncate">{crumb.label}</span>
+                <span className="font-semibold text-foreground truncate">{crumb.label}</span>
               ) : (
-                <Link to={crumb.path} className="text-gray-400 hover:text-[#C62828] transition-colors truncate">
+                <Link to={crumb.path} className="text-muted-foreground hover:text-primary transition-colors truncate">
                   {crumb.label}
                 </Link>
               )}
@@ -192,13 +175,13 @@ export function TopBar({ onMobileMenuToggle, sidebarCollapsed, onSidebarToggle }
 
         {/* Search */}
         <div className="relative flex-1 max-w-xs md:max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="search"
             placeholder="Rechercher..."
-            className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg
-              focus:outline-none focus:ring-2 focus:ring-[#C62828] focus:border-transparent
-              focus:bg-white transition-colors"
+            className="w-full pl-9 pr-3 py-1.5 text-sm bg-secondary text-secondary-foreground border border-transparent rounded-md
+              placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
+              focus:bg-background transition-colors"
           />
         </div>
 
@@ -206,19 +189,19 @@ export function TopBar({ onMobileMenuToggle, sidebarCollapsed, onSidebarToggle }
         <div className="flex items-center gap-1.5 shrink-0">
           {/* WiFi status */}
           <div
-            className="flex items-center justify-center w-8 h-8 rounded-lg"
+            className="flex items-center justify-center w-8 h-8 rounded-md"
             title={isOnline ? 'Connecté' : 'Hors ligne'}
           >
             {isOnline
-              ? <Wifi    className="h-4 w-4 text-green-500" />
-              : <WifiOff className="h-4 w-4 text-[#C62828]" />}
+              ? <Wifi    className="h-4 w-4 text-success" />
+              : <WifiOff className="h-4 w-4 text-destructive" />}
           </div>
 
           {/* Notifications bell */}
           <div ref={notifsRef} className="relative">
             <button
               onClick={() => { setShowNotifs((v) => !v); setShowUser(false) }}
-              className="relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+              className="relative flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
@@ -230,15 +213,14 @@ export function TopBar({ onMobileMenuToggle, sidebarCollapsed, onSidebarToggle }
           <div ref={userRef} className="relative">
             <button
               onClick={() => { setShowUser((v) => !v); setShowNotifs(false) }}
-              className="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-semibold shrink-0"
-              style={{ backgroundColor: '#C62828' }}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold shrink-0"
               title={`${email}${role ? ` — ${ROLE_LABELS[role] ?? role}` : ''}`}
               aria-label="Menu utilisateur"
             >
               {initial}
             </button>
             {showUser && (
-              <UserDropdown email={email} displayName={displayName} initial={initial} onClose={() => setShowUser(false)} />
+              <UserDropdown email={email} displayName={displayName} onClose={() => setShowUser(false)} />
             )}
           </div>
         </div>

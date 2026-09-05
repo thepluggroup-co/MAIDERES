@@ -1,11 +1,12 @@
 /**
- * FORGE ERP — Schéma Drizzle ORM (PostgreSQL / Supabase) — Module RBAC
+ * MAIDERES — Schéma Drizzle ORM (PostgreSQL / Supabase) — Module RBAC
  * Miroir de schema-rbac.ts, dialecte PostgreSQL.
  */
 import {
   pgTable, uuid, text, integer, boolean,
-  timestamp, pgEnum, jsonb,
+  timestamp, pgEnum, jsonb, uniqueIndex, index,
 } from 'drizzle-orm/pg-core'
+import { profilesPg } from './schema.pg'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,13 @@ const tsN = (col: string) => timestamp(col, { withTimezone: true })
 export const RBAC_MODULES = [
   'STOCK', 'COMMERCIAL', 'FINANCE', 'HR', 'PRODUCTION',
   'LOGISTICS', 'ADMIN', 'REPORTS', 'RECEIVABLES',
+  'DEMANDES', 'MATCHING', 'PRESTATAIRES', 'CLIENTS', 'INTERVENTIONS',
+  'TRANSACTIONS', 'REVERSEMENTS', 'PARAMETRAGE', 'UTILISATEURS', 'AUDIT',
+] as const
+
+export const RBAC_ACTIVE_MODULES = [
+  'DEMANDES', 'MATCHING', 'PRESTATAIRES', 'CLIENTS', 'INTERVENTIONS',
+  'TRANSACTIONS', 'REVERSEMENTS', 'PARAMETRAGE', 'UTILISATEURS', 'REPORTS', 'AUDIT',
 ] as const
 
 export const RBAC_ACTIONS = [
@@ -27,6 +35,11 @@ export const RBAC_ACTIONS = [
 export const RBAC_ROLE_NAMES = [
   'SUPER_ADMIN', 'MANAGER', 'COMMERCIAL', 'CAISSIER',
   'MAGASINIER', 'FORMATEUR', 'READONLY',
+  'OPS_MANAGER', 'DISPATCHER', 'PARTNER_MANAGER', 'FINANCE_MANAGER', 'AUDITOR',
+] as const
+
+export const RBAC_ACTIVE_ROLE_NAMES = [
+  'SUPER_ADMIN', 'OPS_MANAGER', 'DISPATCHER', 'PARTNER_MANAGER', 'FINANCE_MANAGER', 'AUDITOR',
 ] as const
 
 export type RbacModule   = typeof RBAC_MODULES[number]
@@ -38,7 +51,7 @@ export const rbacActionEnum   = pgEnum('rbac_action', RBAC_ACTIONS)
 export const rbacRoleNameEnum = pgEnum('rbac_role_name', RBAC_ROLE_NAMES)
 
 export const AUDIT_ACTIONS = [
-  'ACCESS_DENIED', 'USER_CREATED', 'USER_UPDATED', 'USER_DEACTIVATED',
+  'ACCESS_DENIED', 'USER_CREATED', 'USER_UPDATED', 'USER_DEACTIVATED', 'USER_DELETED',
   'ROLE_CHANGED', 'PERMISSION_CHANGED', 'SETTINGS_CHANGED',
   'LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'DATA_EXPORT',
   'PASSWORD_RESET', 'PASSWORD_CHANGED', 'SESSION_EXPIRED',
@@ -73,7 +86,9 @@ export const rbacPermissionsPg = pgTable('rbac_permissions', {
   description: text('description'),
   isImmutable: boolean('is_immutable').notNull().default(false),
   createdAt:   ts('created_at'),
-})
+}, (table) => ({
+  moduleActionUnique: uniqueIndex('rbac_permissions_module_action_unique').on(table.module, table.action),
+}))
 
 export type RbacPermissionPg    = typeof rbacPermissionsPg.$inferSelect
 export type NewRbacPermissionPg = typeof rbacPermissionsPg.$inferInsert
@@ -82,11 +97,14 @@ export type NewRbacPermissionPg = typeof rbacPermissionsPg.$inferInsert
 
 export const rbacRolePermissionsPg = pgTable('rbac_role_permissions', {
   id:           id(),
-  roleId:       uuid('role_id').notNull(),           // FK → rbac_roles(id)
-  permissionId: uuid('permission_id').notNull(),     // FK → rbac_permissions(id)
-  grantedBy:    uuid('granted_by'),                  // FK → profiles(id)
+  roleId:       uuid('role_id').notNull().references(() => rbacRolesPg.id, { onDelete: 'cascade' }),
+  permissionId: uuid('permission_id').notNull().references(() => rbacPermissionsPg.id, { onDelete: 'cascade' }),
+  grantedBy:    uuid('granted_by').references(() => profilesPg.id, { onDelete: 'set null' }),
   createdAt:    ts('created_at'),
-})
+}, (table) => ({
+  rolePermissionUnique: uniqueIndex('rbac_role_permissions_role_permission_unique').on(table.roleId, table.permissionId),
+  permissionIdIdx: index('rbac_role_permissions_permission_id_idx').on(table.permissionId),
+}))
 
 export type RbacRolePermissionPg    = typeof rbacRolePermissionsPg.$inferSelect
 export type NewRbacRolePermissionPg = typeof rbacRolePermissionsPg.$inferInsert
@@ -94,8 +112,8 @@ export type NewRbacRolePermissionPg = typeof rbacRolePermissionsPg.$inferInsert
 // ── rbac_user_profiles ────────────────────────────────────────────────────────
 
 export const rbacUserProfilesPg = pgTable('rbac_user_profiles', {
-  profileId:             uuid('profile_id').primaryKey(),   // FK → profiles(id)
-  roleId:                uuid('role_id').notNull(),          // FK → rbac_roles(id)
+  profileId:             uuid('profile_id').primaryKey().references(() => profilesPg.id, { onDelete: 'cascade' }),
+  roleId:                uuid('role_id').notNull().references(() => rbacRolesPg.id),
   isActive:              boolean('is_active').notNull().default(true),
   passwordMustChange:    boolean('password_must_change').notNull().default(false),
   lastLoginAt:           tsN('last_login_at'),
@@ -104,7 +122,9 @@ export const rbacUserProfilesPg = pgTable('rbac_user_profiles', {
   lockedUntil:           tsN('locked_until'),
   createdAt:             ts('created_at'),
   updatedAt:             ts('updated_at'),
-})
+}, (table) => ({
+  roleIdIdx: index('rbac_user_profiles_role_id_idx').on(table.roleId),
+}))
 
 export type RbacUserProfilePg    = typeof rbacUserProfilesPg.$inferSelect
 export type NewRbacUserProfilePg = typeof rbacUserProfilesPg.$inferInsert
@@ -113,7 +133,7 @@ export type NewRbacUserProfilePg = typeof rbacUserProfilesPg.$inferInsert
 
 export const rbacAuditLogsPg = pgTable('rbac_audit_logs', {
   id:            id(),
-  userId:        uuid('user_id'),                    // FK → profiles(id), nullable (actions anonymes)
+  userId:        uuid('user_id').references(() => profilesPg.id, { onDelete: 'set null' }),
   actionType:    auditActionEnum('action_type').notNull(),
   module:        rbacModuleEnum('module'),
   resourceType:  text('resource_type'),
@@ -124,7 +144,10 @@ export const rbacAuditLogsPg = pgTable('rbac_audit_logs', {
   userAgent:     text('user_agent'),
   createdAt:     ts('created_at'),
   // Pas d'updated_at — append-only
-})
+}, (table) => ({
+  userCreatedAtIdx: index('rbac_audit_logs_user_created_at_idx').on(table.userId, table.createdAt),
+  actionCreatedAtIdx: index('rbac_audit_logs_action_created_at_idx').on(table.actionType, table.createdAt),
+}))
 
 export type RbacAuditLogPg    = typeof rbacAuditLogsPg.$inferSelect
 export type NewRbacAuditLogPg = typeof rbacAuditLogsPg.$inferInsert
@@ -145,7 +168,7 @@ export const rbacSecuritySettingsPg = pgTable('rbac_security_settings', {
   allowedHoursStart:      text('allowed_hours_start').notNull().default('08:00'),
   allowedHoursEnd:        text('allowed_hours_end').notNull().default('18:00'),
   allowedDays:            text('allowed_days').notNull().default('1,2,3,4,5'),
-  updatedBy:              uuid('updated_by'),        // FK → profiles(id)
+  updatedBy:              uuid('updated_by').references(() => profilesPg.id, { onDelete: 'set null' }),
   updatedAt:              ts('updated_at'),
 })
 

@@ -10,6 +10,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     testTimeout: 15_000,
+    // Les tests d'intégration (vraie instance Supabase de test, pas de mock)
+    // ont leur propre config — voir vitest.integration.config.ts + README.
+    exclude: ['**/node_modules/**', 'src/__tests__/integration/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
@@ -37,10 +40,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@forge/db/supabase': path.resolve(__dirname, '../../packages/db/src/supabase-client.ts'),
-      '@forge/db':          path.resolve(__dirname, '../../packages/db/src/index.ts'),
-      '@forge/ai':          path.resolve(__dirname, '../../packages/ai/src/index.ts'),
-      '@forge/shared':      path.resolve(__dirname, '../../packages/shared/src/index.ts'),
+      '@maideres/db/supabase': path.resolve(__dirname, '../../packages/db/src/supabase-client.ts'),
+      '@maideres/db':          path.resolve(__dirname, '../../packages/db/src/index.ts'),
+      '@maideres/ai':          path.resolve(__dirname, '../../packages/ai/src/index.ts'),
+      '@maideres/shared':      path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
 })

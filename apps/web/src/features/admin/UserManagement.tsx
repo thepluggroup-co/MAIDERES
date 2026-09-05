@@ -4,7 +4,7 @@ import {
   Users, Shield, ShieldOff, KeyRound, Trash2,
   Plus, Search, ChevronDown, X, Check,
 } from 'lucide-react'
-import { Button, Badge } from '@forge/ui'
+import { Button, Badge } from '@maideres/ui'
 import {
   useRbacUsers,
   useUpdateRbacUser,
@@ -15,14 +15,17 @@ import {
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const RBAC_ROLES: { name: RbacRoleName; label: string; color: string }[] = [
-  { name: 'SUPER_ADMIN', label: 'Super Admin',    color: 'bg-red-100 text-red-700' },
-  { name: 'MANAGER',     label: 'Manager',         color: 'bg-purple-100 text-purple-700' },
-  { name: 'COMMERCIAL',  label: 'Commercial',      color: 'bg-blue-100 text-blue-700' },
-  { name: 'CAISSIER',    label: 'Caissier',        color: 'bg-green-100 text-green-700' },
-  { name: 'MAGASINIER',  label: 'Magasinier',      color: 'bg-yellow-100 text-yellow-700' },
-  { name: 'FORMATEUR',   label: 'Formateur',       color: 'bg-indigo-100 text-indigo-700' },
-  { name: 'READONLY',    label: 'Lecture seule',   color: 'bg-gray-100 text-gray-600' },
+  { name: 'SUPER_ADMIN',     label: 'Administrateur plateforme', color: 'bg-red-100 text-red-700' },
+  { name: 'OPS_MANAGER',     label: 'Responsable opérations',    color: 'bg-purple-100 text-purple-700' },
+  { name: 'DISPATCHER',      label: 'Opérateur de mise en relation', color: 'bg-blue-100 text-blue-700' },
+  { name: 'PARTNER_MANAGER', label: 'Responsable réseau prestataires', color: 'bg-yellow-100 text-yellow-700' },
+  { name: 'FINANCE_MANAGER', label: 'Responsable financier',    color: 'bg-green-100 text-green-700' },
+  { name: 'AUDITOR',         label: 'Auditeur interne',          color: 'bg-gray-100 text-gray-600' },
 ]
+
+function getRoleLabel(name: RbacRoleName | undefined) {
+  return RBAC_ROLES.find(r => r.name === name)?.label ?? 'Non configuré'
+}
 
 function getRoleStyle(name: RbacRoleName | undefined) {
   return RBAC_ROLES.find(r => r.name === name)?.color ?? 'bg-gray-100 text-gray-500'
@@ -39,7 +42,7 @@ interface EditModalProps {
 function EditModal({ user, onClose, onSaved }: EditModalProps) {
   const { update, loading } = useUpdateRbacUser()
   const currentRole = user.rbac_user_profiles?.rbac_roles?.name
-  const [selectedRole, setSelectedRole] = useState<RbacRoleName>(currentRole ?? 'READONLY')
+  const [selectedRole, setSelectedRole] = useState<RbacRoleName>(currentRole ?? 'AUDITOR')
   const [isActive, setIsActive] = useState(user.rbac_user_profiles?.is_active ?? user.actif)
 
   async function handleSave() {
@@ -209,7 +212,7 @@ export function UserManagement() {
                     <td className="px-4 py-3">
                       {rbacRole ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleStyle(rbacRole)}`}>
-                          {rbacRole}
+                          {getRoleLabel(rbacRole)}
                         </span>
                       ) : (
                         <span className="text-gray-400 text-xs">Non configuré</span>

@@ -1,5 +1,7 @@
 import { toast } from 'sonner'
 import { supabase } from './supabase'
+import { PREVIEW_MODE } from './preview-mode'
+import { mockRequest } from './mock-data'
 
 const _raw = import.meta.env.VITE_API_URL as string | undefined
 export const API_BASE = _raw?.startsWith('http') ? _raw : 'http://localhost:3001'
@@ -93,6 +95,16 @@ async function request<T>(
   _retried = false,
   timeoutMs = REQUEST_TIMEOUT_MS,
 ): Promise<T> {
+  // Mode aperçu — sert des données mockées sans toucher au réseau, pour
+  // pouvoir visualiser le front-end sans backend ni session Supabase.
+  if (PREVIEW_MODE) {
+    const mocked = mockRequest(method, path, body)
+    if (mocked !== undefined) {
+      await new Promise((r) => setTimeout(r, 150))
+      return mocked as T
+    }
+  }
+
   const url = `${API_BASE}${path}`
 
   const controller = new AbortController()

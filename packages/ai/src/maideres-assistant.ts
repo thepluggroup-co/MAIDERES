@@ -1,4 +1,4 @@
-import { anthropic, FORGE_MODEL } from './client'
+import { anthropic, CLAUDE_MODEL } from './client'
 
 const SYSTEM_PROMPT = `Tu es l'assistant intelligent de MAIDERES, une marketplace d'intermédiation
 de services multi-prestataires basée à Douala, Cameroun.
@@ -6,12 +6,12 @@ Tu aides les opérateurs avec le traitement des demandes, le matching prestatair
 Réponds toujours en français. Sois concis, pratique et orienté action.
 La devise utilisée est le FCFA (XAF).`
 
-export async function askForgeAI(
+export async function askMaideresAI(
   userMessage: string,
   conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
 ): Promise<string> {
   const response = await anthropic.messages.create({
-    model: FORGE_MODEL,
+    model: CLAUDE_MODEL,
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [

@@ -1,9 +1,9 @@
-name: FORGE Deploy
+name: MAIDERES Deploy
 
 # Se déclenche uniquement quand le CI passe sur main
 on:
   workflow_run:
-    workflows: ["FORGE CI"]
+    workflows: ["MAIDERES CI"]
     types: [completed]
     branches: [main]
 
@@ -45,13 +45,13 @@ jobs:
         run: npm install -g @railway/cli
 
       - name: Deploy API sur Railway
-        run: railway up --service forge-tafdil-api --detach
+        run: railway up --service maideres-api --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
-  # ── Deploy Web ERP → Vercel ─────────────────────────────────────────────────
+  # ── Deploy Web Console → Vercel ─────────────────────────────────────────────
   deploy-web:
-    name: Deploy Web ERP (Vercel)
+    name: Deploy Web Console (Vercel)
     runs-on: ubuntu-latest
     needs: check-ci
     environment: production
@@ -95,9 +95,9 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
 
-  # ── Deploy Shop → Vercel (shop.tafdil.cm) ───────────────────────────────────
+  # ── Deploy Shop → Vercel (maideres.vercel.app) ──────────────────────────────
   deploy-shop:
-    name: Deploy Shop (Vercel — shop.tafdil.cm)
+    name: Deploy Shop (Vercel — maideres.vercel.app)
     runs-on: ubuntu-latest
     needs: check-ci
     environment: production

@@ -56,7 +56,7 @@ export function SlideOver({ isOpen, onClose, title, children, width = 'lg' }: Sl
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-              <h2 className="text-base font-semibold text-[#212121]">{title}</h2>
+              <h2 className="text-base font-semibold text-[#1F2430]">{title}</h2>
               <button
                 onClick={onClose}
                 className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400

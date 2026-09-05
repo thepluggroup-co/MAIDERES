@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
-import { TafdilLogoHero } from '@/components/ui/Logo'
+import { MaideresLogoHero } from '@/components/ui/Logo'
 
 export default function Login() {
   const { signIn } = useAuth()
@@ -31,7 +31,7 @@ export default function Login() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: 'linear-gradient(135deg, #212121 0%, #000000 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #1B3357 0%, #0E1420 100%)' }}
     >
       <motion.div
         initial={{ opacity: 0, y: 24 }}
@@ -41,7 +41,7 @@ export default function Login() {
       >
         {/* Logo */}
         <div className="mb-10">
-          <TafdilLogoHero variant="white" />
+          <MaideresLogoHero variant="white" />
         </div>
 
         {/* Form */}
@@ -56,10 +56,10 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              placeholder="vous@tafdil.cm"
+              placeholder="vous@maideres.com"
               className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30
                 border border-white/10 bg-white/5 focus:outline-none focus:ring-2
-                focus:ring-[#C62828] focus:border-transparent transition-all"
+                focus:ring-[#8FA8D6] focus:border-transparent transition-all"
             />
           </div>
 
@@ -76,7 +76,7 @@ export default function Login() {
               placeholder="••••••••"
               className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder-white/30
                 border border-white/10 bg-white/5 focus:outline-none focus:ring-2
-                focus:ring-[#C62828] focus:border-transparent transition-all"
+                focus:ring-[#8FA8D6] focus:border-transparent transition-all"
             />
           </div>
 
@@ -85,7 +85,7 @@ export default function Login() {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-sm font-medium text-center px-3 py-2 rounded-lg"
-              style={{ backgroundColor: 'rgba(198,40,40,0.2)', color: '#EF9A9A' }}
+              style={{ backgroundColor: 'rgba(163,45,45,0.25)', color: '#F0A8A8' }}
             >
               {error}
             </motion.p>
@@ -94,12 +94,12 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all
-              focus:outline-none focus:ring-2 focus:ring-[#C62828] focus:ring-offset-2
+            className="w-full py-3 rounded-xl text-sm font-semibold transition-all
+              focus:outline-none focus:ring-2 focus:ring-[#F2A93B] focus:ring-offset-2
               focus:ring-offset-black disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: '#C62828' }}
-            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#B71C1C' }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#C62828' }}
+            style={{ backgroundColor: '#F2A93B', color: '#4A2F06' }}
+            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#E09A2E' }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#F2A93B' }}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -114,7 +114,7 @@ export default function Login() {
         </form>
 
         <p className="mt-8 text-center text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          FORGE ERP v1.0 · © THE PLUG 2026
+          MAIDERES · Console opérations · © MAIDERES 2026
         </p>
       </motion.div>
     </div>

@@ -1,5 +1,5 @@
 import React from 'react'
-import type { OrderStatus } from '@forge/shared'
+import type { OrderStatus } from '@maideres/shared'
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info'
 

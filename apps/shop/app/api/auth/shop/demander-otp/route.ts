@@ -13,13 +13,13 @@ async function sendSms(to: string, code: string): Promise<void> {
   const provider  = process.env.SMS_PROVIDER ?? ''
   const apiKey    = process.env.AT_API_KEY    ?? ''
   const username  = process.env.AT_USERNAME   ?? ''
-  const senderId  = process.env.AT_SENDER_ID  ?? 'FORGE'
+  const senderId  = process.env.AT_SENDER_ID  ?? 'MAIDERES'
 
   if (provider === 'africas_talking' && apiKey && username) {
     const body = new URLSearchParams({
       username,
       to,
-      message: `Votre code FORGE Shop : ${code}. Valable 5 minutes.`,
+      message: `Votre code MAIDERES : ${code}. Valable 5 minutes.`,
       from:    senderId,
     })
     await fetch('https://api.africastalking.com/version1/messaging', {

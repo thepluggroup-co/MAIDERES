@@ -1,11 +1,11 @@
 /**
- * FORGE ERP — Middleware permission RBAC
+ * MAIDERES — Middleware permission RBAC
  * Fabrique requirePermission(module, action).
  * À utiliser APRÈS authMiddleware.
  */
 import type { MiddlewareHandler } from 'hono'
 import type { HonoVariables } from '../types'
-import type { RbacModule, RbacAction } from '@forge/db'
+import type { RbacModule, RbacAction } from '@maideres/db'
 import { checkPermission, writeAuditLog } from '../services/rbacService'
 
 export function requirePermission(

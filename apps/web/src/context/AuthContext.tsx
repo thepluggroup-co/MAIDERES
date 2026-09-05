@@ -55,7 +55,7 @@ if (_cached) setApiToken(_cached.access_token)
 // Supabase free tier pauses the DB after inactivity; the first real query can take
 // 5-15s. Doing this at module load means the pool is warm by the time the user
 // reaches a data-heavy page.
-supabase.from('credits').select('id').limit(1).then(() => {}).catch(() => {})
+supabase.from('credits').select('id').limit(1).then(() => {}, () => {})
 
 interface AuthContextValue {
   user: User | null

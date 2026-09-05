@@ -1,5 +1,5 @@
 /**
- * FORGE ERP — Service RBAC
+ * MAIDERES — Service RBAC
  * Gestion des permissions, audit trail, et tentatives de connexion.
  *
  * Ordre de priorité :
@@ -8,8 +8,8 @@
  *   3. DB PostgreSQL / Supabase
  *   4. Fallback rôle JWT legacy si pas de rbac_user_profiles
  */
-import { supabaseAdmin } from '@forge/db'
-import type { RbacModule, RbacAction, AuditActionType } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
+import type { RbacModule, RbacAction, AuditActionType } from '@maideres/db'
 
 const db = supabaseAdmin!
 
@@ -80,15 +80,13 @@ function checkImmutableRules(
     return { decision: 'DENY' }
   }
 
-  // ADMIN:CONFIGURE → SUPER_ADMIN uniquement
-  if (module === 'ADMIN' && action === 'CONFIGURE') {
+  // UTILISATEURS:CONFIGURE → SUPER_ADMIN uniquement
+  if (module === 'UTILISATEURS' && action === 'CONFIGURE') {
     return roleName === 'SUPER_ADMIN' ? { decision: 'ALLOW' } : { decision: 'DENY' }
   }
 
-  // audit_logs DELETE → toujours refusé (append-only)
-  // On conserve cette restriction pour les autres modules, mais on laisse la suppression
-  // de comptes utilisateurs gérer par la route admin spécifique.
-  if (module === 'ADMIN' && action === 'DELETE' && roleName !== 'SUPER_ADMIN') {
+  // Le journal d'audit est append-only, y compris pour un super administrateur.
+  if (module === 'AUDIT' && action === 'DELETE') {
     return { decision: 'DENY' }
   }
 
@@ -99,11 +97,10 @@ function checkImmutableRules(
 
 const LEGACY_ROLE_MAP: Record<string, string> = {
   admin:       'SUPER_ADMIN',
-  directeur:   'SUPER_ADMIN',
-  superviseur: 'MANAGER',
-  operateur:   'COMMERCIAL',
-  technicien:  'READONLY',
-  apprenant:   'READONLY',   // legacy alias
+  superviseur: 'OPS_MANAGER',
+  operateur:   'DISPATCHER',
+  // Les clients et prestataires n'ont pas de rôle RBAC back-office.
+  // Leur périmètre est contrôlé par ownership + RLS.
 }
 
 // ── Chargement des permissions depuis la DB ───────────────────────────────────
@@ -165,9 +162,9 @@ async function loadPermissionsFromDb(userId: string, legacyRole?: string): Promi
     }
   }
 
-  // SUPER_ADMIN a tout (guard-rail côté cache)
+  // SUPER_ADMIN a tout le périmètre métier actif (guard-rail côté cache).
   if (roleName === 'SUPER_ADMIN') {
-    const MODULES = ['STOCK','COMMERCIAL','FINANCE','HR','PRODUCTION','LOGISTICS','ADMIN','REPORTS','RECEIVABLES']
+    const MODULES = ['DEMANDES','MATCHING','PRESTATAIRES','CLIENTS','INTERVENTIONS','TRANSACTIONS','REVERSEMENTS','PARAMETRAGE','UTILISATEURS','REPORTS','AUDIT']
     const ACTIONS = ['READ','CREATE','UPDATE','DELETE','VALIDATE','CONFIGURE','EXPORT']
     for (const m of MODULES) for (const a of ACTIONS) perms.add(`${m}:${a}`)
   }
@@ -188,8 +185,8 @@ export async function checkPermission(
 ): Promise<PermissionResult> {
   // 1. IMMUTABLE_RULES — pas besoin de connaître le rôle pour les règles DENY globales
   const preCheck = checkImmutableRules(undefined, module, action)
-  if (preCheck.decision === 'DENY' && module === 'ADMIN' && action === 'DELETE') {
-    return { allowed: false, reason: 'IMMUTABLE_RULE:ADMIN_DELETE' }
+  if (preCheck.decision === 'DENY' && module === 'AUDIT' && action === 'DELETE') {
+    return { allowed: false, reason: 'IMMUTABLE_RULE:AUDIT_DELETE' }
   }
 
   // 2. Récupérer les perms (cache ou DB)

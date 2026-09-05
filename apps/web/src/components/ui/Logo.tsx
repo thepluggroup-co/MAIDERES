@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react'
-
 interface IconProps {
   size?: number
   variant?: 'color' | 'white'
@@ -11,47 +9,52 @@ interface LogoProps extends IconProps {
   subtitle?: string
 }
 
-function logoStyle(size: number, variant: IconProps['variant'] = 'color'): CSSProperties {
-  return {
-    width: Math.round(size * 1.65),
-    height: Math.round(size * 1.65),
-    objectFit: 'contain',
-    backgroundColor: variant === 'white' ? '#ffffff' : 'transparent',
-    borderRadius: variant === 'white' ? 8 : 0,
-  }
-}
-
-export function TafdilIcon({ size = 40, variant = 'color', className }: IconProps) {
+export function MaideresIcon({ size = 40, variant = 'color', className }: IconProps) {
   return (
-    <img
-      src="/tafdil-logo.png"
-      alt="TAFDIL"
+    <span
       className={className}
-      style={logoStyle(size, variant)}
-    />
-  )
-}
-
-export function TafdilLogo({ size = 36, variant = 'color', subtitle, className }: LogoProps) {
-  return (
-    <span className={`inline-flex items-center gap-2.5 ${className ?? ''}`}>
-      <img
-        src="/tafdil-logo.png"
-        alt={subtitle ? `TAFDIL ${subtitle}` : 'TAFDIL'}
-        style={logoStyle(size, variant)}
-      />
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        backgroundColor: variant === 'white' ? '#ffffff' : 'transparent',
+        borderRadius: variant === 'white' ? 8 : 0,
+        padding: variant === 'white' ? size * 0.12 : 0,
+      }}
+    >
+      <img src="/maideres-icon.svg" alt="MAIDERES" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
     </span>
   )
 }
 
-export function TafdilLogoHero({ variant = 'white' }: Pick<IconProps, 'variant'>) {
+export function MaideresLogo({ size = 32, className, subtitle }: LogoProps) {
+  return (
+    <span className={`inline-flex items-center gap-2 ${className ?? ''}`}>
+      <img src="/maideres-icon.svg" alt="" style={{ width: size, height: size }} />
+      <span className="leading-tight">
+        <span className="text-sm font-bold tracking-[0.08em] text-foreground">
+          <span className="text-[#254C8C]">MAI</span>
+          <span className="text-[#A82D7E]">DERES</span>
+        </span>
+        {subtitle && <span className="block text-[10px] uppercase tracking-wider text-muted-foreground">{subtitle}</span>}
+      </span>
+    </span>
+  )
+}
+
+export function MaideresLogoHero({ variant = 'color' }: Pick<IconProps, 'variant'>) {
+  const dark = variant === 'white'
   return (
     <div className="flex flex-col items-center gap-3">
-      <img
-        src="/tafdil-logo.png"
-        alt="TAFDIL"
-        style={logoStyle(72, variant)}
-      />
+      <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/95 p-2.5 shadow-sm">
+        <img src="/maideres-icon.svg" alt="" style={{ width: '100%', height: '100%' }} />
+      </span>
+      <span className="text-xl font-bold tracking-[0.1em]">
+        <span className={dark ? 'text-[#A9C2E8]' : 'text-[#254C8C]'}>MAI</span>
+        <span className={dark ? 'text-[#EFB3D9]' : 'text-[#A82D7E]'}>DERES</span>
+      </span>
     </div>
   )
 }

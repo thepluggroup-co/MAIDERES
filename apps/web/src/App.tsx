@@ -5,6 +5,7 @@ import { AnimatePresence } from 'framer-motion'
 import { Toaster } from 'sonner'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { AppShell } from '@/components/layout/AppShell'
+import { PREVIEW_MODE } from '@/lib/preview-mode'
 
 // ── Error Boundary global ──────────────────────────────────────────────────────
 // Attrape les erreurs non gérées dans l'arbre React et affiche un message
@@ -55,15 +56,22 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, EBState> {
 }
 
 // Pages
-const Login        = lazy(() => import('@/pages/Login'))
-const ModulePage    = lazy(() => import('@/pages/ModulePage'))
-const Account       = lazy(() => import('@/pages/Account'))
-const AdminSettings = lazy(() => import('@/pages/AdminSettings'))
+const Login          = lazy(() => import('@/pages/Login'))
+const Account        = lazy(() => import('@/pages/Account'))
+const AdminSettings  = lazy(() => import('@/pages/AdminSettings'))
+const Dashboard      = lazy(() => import('@/pages/Dashboard'))
+const Demandes       = lazy(() => import('@/pages/Demandes'))
+const DemandeDetail  = lazy(() => import('@/pages/DemandeDetail'))
+const Prestataires   = lazy(() => import('@/pages/Prestataires'))
+const Clients        = lazy(() => import('@/pages/Clients'))
+const Dispatch        = lazy(() => import('@/pages/Dispatch'))
+const Interventions   = lazy(() => import('@/pages/Interventions'))
+const Reversements    = lazy(() => import('@/pages/Reversements'))
 
 function PageLoader() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="h-8 w-8 rounded-full border-2 border-[#C62828] border-t-transparent animate-spin" />
+      <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
     </div>
   )
 }
@@ -94,7 +102,7 @@ function OfflineBanner() {
   return (
     <div
       className="fixed top-0 left-0 right-0 z-[9999] text-center py-2 px-4 text-xs font-semibold text-white transition-all"
-      style={{ backgroundColor: offline ? '#dc2626' : '#15803d' }}
+      style={{ backgroundColor: offline ? '#A32D2D' : '#3B6D11' }}
     >
       {offline
         ? '⚠️ Mode hors-ligne — Les données sont enregistrées localement et synchronisées à la reconnexion.'
@@ -105,7 +113,7 @@ function OfflineBanner() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
-  if (!user) return <Navigate to="/login" replace />
+  if (!user && !PREVIEW_MODE) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
@@ -136,8 +144,17 @@ function AppRoutes() {
           {/* Redirect racine */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Dashboard — placeholder en attendant la Console MAIDERES (Phase 3) */}
-          <Route path="/dashboard" element={<Shell><ModulePage title="Dashboard" subtitle="Console MAIDERES à venir" /></Shell>} />
+          {/* Console d'opérations MAIDERES */}
+          <Route path="/dashboard"       element={<Shell><Dashboard /></Shell>} />
+          <Route path="/demandes"        element={<Shell><Demandes /></Shell>} />
+          <Route path="/demandes/:id"    element={<Shell><DemandeDetail /></Shell>} />
+          <Route path="/prestataires"    element={<Shell><Prestataires /></Shell>} />
+          <Route path="/clients"         element={<Shell><Clients /></Shell>} />
+
+          <Route path="/dispatch"        element={<Shell><Dispatch /></Shell>} />
+          <Route path="/interventions"   element={<Shell><Interventions /></Shell>} />
+
+          <Route path="/reversements"    element={<Shell><Reversements /></Shell>} />
 
           {/* Account / settings */}
           <Route path="/account" element={<Shell><Account /></Shell>} />

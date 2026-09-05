@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://maideres.cm'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://maideres.vercel.app'
 
 export const siteMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   icons: {
-    icon: [{ url: '/metalforge-icon.svg', type: 'image/svg+xml' }],
-    shortcut: '/metalforge-icon.svg',
+    icon: [{ url: '/maideres-icon.svg', type: 'image/svg+xml' }],
+    shortcut: '/maideres-icon.svg',
   },
   title: {
     default: 'MAIDERES — Mise en relation de prestataires de services',

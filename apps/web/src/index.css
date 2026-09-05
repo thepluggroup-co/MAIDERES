@@ -1,41 +1,191 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
-@theme {
-  /* FORGE brand colors */
-  --color-forge-red: #C62828;
-  --color-forge-red-dark: #B71C1C;
-  --color-forge-red-light: #FFEBEE;
+@custom-variant dark (&:is(.dark *));
 
-  /* FORGE neutrals */
-  --color-forge-dark: #212121;
-  --color-forge-steel: #37474F;
-  --color-forge-steel-light: #ECEFF1;
-  --color-forge-light: #F5F5F5;
+/*
+ * MAIDERES — design tokens issus de la charte graphique officielle
+ * (MAIDERES-charte-graphique.pdf v1 2026) : magenta-baie #A82D7E (primaire),
+ * indigo #254C8C (secondaire), doré marigold #F2A93B (accent / action
+ * principale, un seul par écran). Le vert n'est jamais une couleur de
+ * marque — réservé au statut "succès" (règle d'or #5 de la charte).
+ * La Console 360 reste volontairement quasi monochrome (règle d'or #6) :
+ * chrome neutre, couleur réservée aux statuts et à l'action principale.
+ */
 
-  /* FORGE typography */
-  --font-forge: 'Inter', sans-serif;
-  --font-forge-mono: 'JetBrains Mono', monospace;
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --shadow-panel: 0 1px 2px oklch(0.25 0.06 265 / 0.08), 0 8px 24px -16px oklch(0.25 0.06 265 / 0.25);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: #FAF8F5;
+  --foreground: #1F2430;
+  --card: #FFFFFF;
+  --card-foreground: #1F2430;
+  --popover: #FFFFFF;
+  --popover-foreground: #1F2430;
+  --primary: #F2A93B;
+  --primary-foreground: #4A2F06;
+  --secondary: #F1EEE9;
+  --secondary-foreground: #1F2430;
+  --muted: #F1EEE9;
+  --muted-foreground: #5F5E5A;
+  --accent: #E4EAF4;
+  --accent-foreground: #1B3D6E;
+  --destructive: #FCEBEB;
+  --destructive-foreground: #A32D2D;
+  --success: #EAF3DE;
+  --success-foreground: #3B6D11;
+  --warning: #FAEEDA;
+  --warning-foreground: #854F0B;
+  --info: #E6F1FB;
+  --info-foreground: #185FA5;
+  --border: #E5E1DA;
+  --input: #E5E1DA;
+  --ring: #254C8C;
+  --chart-1: #254C8C;
+  --chart-2: #A82D7E;
+  --chart-3: #F2A93B;
+  --chart-4: #185FA5;
+  --chart-5: #3B6D11;
+  --sidebar: #22252C;
+  --sidebar-foreground: #EDEBE6;
+  --sidebar-primary: #F2A93B;
+  --sidebar-primary-foreground: #2A1B02;
+  --sidebar-accent: #2E323B;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #F2A93B;
+}
+
+.dark {
+  --background: #191B21;
+  --foreground: #EDEBE6;
+  --card: #22242C;
+  --card-foreground: #EDEBE6;
+  --popover: #22242C;
+  --popover-foreground: #EDEBE6;
+  --primary: #F2A93B;
+  --primary-foreground: #2A1B02;
+  --secondary: #2A2D36;
+  --secondary-foreground: #EDEBE6;
+  --muted: #2A2D36;
+  --muted-foreground: #A7A5A0;
+  --accent: #2C3B57;
+  --accent-foreground: #C7D6EE;
+  --destructive: #3D2323;
+  --destructive-foreground: #F0A8A8;
+  --success: #263A18;
+  --success-foreground: #A6D889;
+  --warning: #3B2E10;
+  --warning-foreground: #F2CE8F;
+  --info: #1C3450;
+  --info-foreground: #9CC5EC;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #F2A93B;
+  --sidebar: #16181D;
+  --sidebar-foreground: #EDEBE6;
+  --sidebar-primary: #F2A93B;
+  --sidebar-primary-foreground: #2A1B02;
+  --sidebar-accent: #22252C;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #F2A93B;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-forge);
-  background-color: var(--color-forge-light);
-  color: var(--color-forge-dark);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  code,
+  pre,
+  kbd {
+    font-family: 'JetBrains Mono', monospace;
+  }
 }
 
-code,
-pre,
-kbd {
-  font-family: var(--font-forge-mono);
+@utility panel {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+}
+
+@utility cell-num {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Sidebar nav — seamless dark scrollbar ───────────────────────────────────

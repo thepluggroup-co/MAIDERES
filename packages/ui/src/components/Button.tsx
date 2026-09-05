@@ -17,13 +17,13 @@ const base =
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'bg-[#C62828] hover:bg-[#B71C1C] active:bg-[#7f0000] text-white focus:ring-[#C62828]',
+    'bg-[#F2A93B] hover:bg-[#E09A2E] active:bg-[#C98620] text-[#4A2F06] focus:ring-[#F2A93B]',
   secondary:
-    'bg-[#37474F] hover:bg-[#263238] active:bg-[#1c2b31] text-white focus:ring-[#37474F]',
+    'bg-white border border-[#254C8C] hover:bg-[#E4EAF4] active:bg-[#D3DEF0] text-[#254C8C] focus:ring-[#254C8C]',
   danger:
-    'bg-[#B71C1C] hover:bg-[#7f0000] active:bg-[#5c0000] text-white focus:ring-[#B71C1C]',
+    'bg-[#A32D2D] hover:bg-[#8A2424] active:bg-[#711D1D] text-white focus:ring-[#A32D2D]',
   ghost:
-    'bg-transparent hover:bg-[#ECEFF1] active:bg-[#CFD8DC] text-[#37474F] focus:ring-[#37474F]',
+    'bg-transparent hover:bg-[#F1EEE9] active:bg-[#E5E0D8] text-[#5F5E5A] focus:ring-[#5F5E5A]',
 }
 
 const sizes: Record<ButtonSize, string> = {

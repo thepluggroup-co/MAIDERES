@@ -12,14 +12,16 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
     css: false,
+    // e2e/ contient des specs Playwright (test() incompatible avec le global vitest)
+    exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@forge/ui':     path.resolve(__dirname, '../../packages/ui/src/index.ts'),
-      '@forge/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
-      '@forge/ai':     path.resolve(__dirname, '../../packages/ai/src/index.ts'),
-      '@forge/db':     path.resolve(__dirname, '../../packages/db/src/index.ts'),
+      '@maideres/ui':     path.resolve(__dirname, '../../packages/ui/src/index.ts'),
+      '@maideres/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
+      '@maideres/ai':     path.resolve(__dirname, '../../packages/ai/src/index.ts'),
+      '@maideres/db':     path.resolve(__dirname, '../../packages/db/src/index.ts'),
     },
   },
 })

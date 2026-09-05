@@ -1,5 +1,5 @@
 /**
- * FORGE ERP — Hooks React pour le module Sécurité / RBAC.
+ * MAIDERES — Hooks React pour le module Sécurité / RBAC.
  * Tous les hooks retournent { data, loading, error?, refetch }.
  */
 import { useState, useEffect, useCallback } from 'react'
@@ -9,12 +9,13 @@ import { toast } from 'sonner'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type RbacRoleName =
-  | 'SUPER_ADMIN' | 'MANAGER' | 'COMMERCIAL'
-  | 'CAISSIER' | 'MAGASINIER' | 'FORMATEUR' | 'READONLY'
+  | 'SUPER_ADMIN' | 'OPS_MANAGER' | 'DISPATCHER'
+  | 'PARTNER_MANAGER' | 'FINANCE_MANAGER' | 'AUDITOR'
 
 export type RbacModule =
-  | 'STOCK' | 'COMMERCIAL' | 'FINANCE' | 'HR'
-  | 'PRODUCTION' | 'LOGISTICS' | 'ADMIN' | 'REPORTS' | 'RECEIVABLES'
+  | 'DEMANDES' | 'MATCHING' | 'PRESTATAIRES' | 'CLIENTS'
+  | 'INTERVENTIONS' | 'TRANSACTIONS' | 'REVERSEMENTS'
+  | 'PARAMETRAGE' | 'UTILISATEURS' | 'REPORTS' | 'AUDIT'
 
 export type RbacAction =
   | 'READ' | 'CREATE' | 'UPDATE' | 'DELETE' | 'VALIDATE' | 'CONFIGURE' | 'EXPORT'

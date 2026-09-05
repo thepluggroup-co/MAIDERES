@@ -10,7 +10,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 // lisibles plutôt qu'un crash silencieux.
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
-    '[FORGE] VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY manquant.\n' +
+    '[MAIDERES] VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY manquant.\n' +
     'Lancez setup-env.bat puis redémarrez le serveur de développement.',
   )
 }

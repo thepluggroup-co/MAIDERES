@@ -1,0 +1,1 @@
+ALTER TABLE "sla_config" ADD COLUMN "seuil_alerte_heures" integer DEFAULT 0 NOT NULL;

@@ -9,7 +9,7 @@ function normalizePhone(value?: string | null) {
 
 export async function generateMetadata({ params }: { params: { ref: string } }): Promise<Metadata> {
   return {
-    title: `Commande ${params.ref} | FORGE TAFDIL`,
+    title: `Commande ${params.ref} | MAIDERES`,
     robots: { index: false, follow: false },
   }
 }

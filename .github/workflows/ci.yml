@@ -1,4 +1,4 @@
-name: FORGE CI
+name: MAIDERES CI
 
 on:
   push:
@@ -86,7 +86,7 @@ jobs:
 
   # ── 3. Build Web (ERP frontend) ─────────────────────────────────────────────
   build-web:
-    name: Build Web ERP
+    name: Build Web Console
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
     steps:
@@ -105,7 +105,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build web ERP
+      - name: Build Web Console
         working-directory: apps/web
         run: pnpm build
         env:
@@ -142,12 +142,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build shop
-        run: pnpm --filter @forge/shop build
+        run: pnpm --filter @maideres/shop build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SITE_URL: https://shop.tafdil.cm
+          NEXT_PUBLIC_SITE_URL: https://maideres.vercel.app
           NEXT_PUBLIC_WHATSAPP_NUMBER: '+237 95884528'
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           NOTCHPAY_PUBLIC_KEY: ${{ secrets.NOTCHPAY_PUBLIC_KEY }}

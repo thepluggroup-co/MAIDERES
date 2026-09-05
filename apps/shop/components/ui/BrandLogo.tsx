@@ -1,7 +1,5 @@
 'use client'
 
-import type { CSSProperties } from 'react'
-
 interface IconProps {
   size?: number
   variant?: 'color' | 'white'
@@ -12,47 +10,51 @@ interface LogoProps extends IconProps {
   showText?: boolean
 }
 
-function logoStyle(size: number, variant: IconProps['variant'] = 'color'): CSSProperties {
-  return {
-    width: Math.round(size * 1.65),
-    height: Math.round(size * 1.65),
-    objectFit: 'contain',
-    backgroundColor: variant === 'white' ? '#ffffff' : 'transparent',
-    borderRadius: variant === 'white' ? 8 : 0,
-  }
-}
-
-export function MetalForgeIcon({ size = 40, variant = 'color', className }: IconProps) {
+export function MaideresIcon({ size = 40, variant = 'color', className }: IconProps) {
   return (
-    <img
-      src="/tafdil-logo.png"
-      alt="TAFDIL"
+    <span
       className={className}
-      style={logoStyle(size, variant)}
-    />
-  )
-}
-
-export function MetalForgeLogo({ size = 32, variant = 'color', className }: LogoProps) {
-  return (
-    <span className={`inline-flex items-center ${className ?? ''}`}>
-      <img
-        src="/tafdil-logo.png"
-        alt="TAFDIL"
-        style={logoStyle(size, variant)}
-      />
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: size,
+        height: size,
+        backgroundColor: variant === 'white' ? '#ffffff' : 'transparent',
+        borderRadius: variant === 'white' ? 8 : 0,
+        padding: variant === 'white' ? size * 0.12 : 0,
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/maideres-icon.svg" alt="MAIDERES" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
     </span>
   )
 }
 
-export function MetalForgeHeaderLogo({ label = 'Shop' }: { label?: string }) {
+export function MaideresLogo({ size = 32, variant = 'color', className }: LogoProps) {
+  const light = variant === 'white'
   return (
-    <span className="inline-flex items-center">
-      <img
-        src="/tafdil-logo.png"
-        alt={label ? `TAFDIL ${label}` : 'TAFDIL'}
-        style={logoStyle(32, 'color')}
-      />
+    <span className={`inline-flex items-center gap-2 ${className ?? ''}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/maideres-icon.svg" alt="" style={{ width: size, height: size }} />
+      <span className="font-display text-sm font-bold tracking-[0.06em]">
+        <span className={light ? 'text-white' : 'text-brand-indigo'}>MAI</span>
+        <span className={light ? 'text-white/70' : 'text-brand-magenta'}>DERES</span>
+      </span>
+    </span>
+  )
+}
+
+export function MaideresHeaderLogo({ label }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/maideres-icon.svg" alt="MAIDERES" style={{ width: 32, height: 32 }} />
+      <span className="font-display text-sm font-bold tracking-[0.06em]">
+        <span className="text-brand-indigo">MAI</span>
+        <span className="text-brand-magenta">DERES</span>
+        {label && <span className="ml-1 font-sans text-xs font-medium text-brand-ink-soft">{label}</span>}
+      </span>
     </span>
   )
 }

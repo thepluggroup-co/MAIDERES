@@ -1,0 +1,1 @@
+ALTER TABLE "reversements" ADD COLUMN "date_paiement" timestamp with time zone;

@@ -1,9 +1,8 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from '../types'
-import { requireRole } from '../middleware/rbac'
 import {
   checkPermission,
   writeAuditLog,
@@ -13,8 +12,8 @@ import { resolveInviteRedirectUrl } from '../utils/inviteRedirect'
 
 // ── Schémas Zod ───────────────────────────────────────────────────────────────
 
-const RBAC_ROLE_NAMES = ['SUPER_ADMIN','MANAGER','COMMERCIAL','CAISSIER','MAGASINIER','FORMATEUR','READONLY','LIVREUR'] as const
-const RBAC_MODULES    = ['STOCK','COMMERCIAL','FINANCE','HR','PRODUCTION','LOGISTICS','ADMIN','REPORTS','RECEIVABLES'] as const
+const RBAC_ROLE_NAMES = ['SUPER_ADMIN','OPS_MANAGER','DISPATCHER','PARTNER_MANAGER','FINANCE_MANAGER','AUDITOR'] as const
+const RBAC_MODULES    = ['DEMANDES','MATCHING','PRESTATAIRES','CLIENTS','INTERVENTIONS','TRANSACTIONS','REVERSEMENTS','PARAMETRAGE','UTILISATEURS','REPORTS','AUDIT'] as const
 const RBAC_ACTIONS    = ['READ','CREATE','UPDATE','DELETE','VALIDATE','CONFIGURE','EXPORT'] as const
 
 const patchRbacUserSchema = z.object({
@@ -57,10 +56,19 @@ const securitySettingsSchema = z.object({
 
 export const adminRouter = new Hono<{ Variables: HonoVariables }>()
 
-// ── Gestion utilisateurs réservée au Patron (admin) ──────────────────────────
-adminRouter.use('*', requireRole(['admin']))
+// ── Administration réservée au rôle disposant de la configuration utilisateurs ─
+adminRouter.use('*', async (c, next) => {
+  const caller = c.get('user')
+  const permission = await checkPermission(caller.id, 'UTILISATEURS', 'CONFIGURE', caller.role)
 
-const VALID_ROLES = ['admin', 'superviseur', 'operateur', 'technicien'] as const
+  if (!permission.allowed) {
+    return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
+  }
+
+  await next()
+})
+
+const VALID_ROLES = ['admin', 'superviseur', 'operateur', 'apprenant'] as const
 type ForgeRole = typeof VALID_ROLES[number]
 
 // ── GET /api/admin/users ──────────────────────────────────────────────────────
@@ -128,18 +136,59 @@ adminRouter.patch('/users/:id', async (c) => {
     }).catch((e) => console.error('[admin] ban update failed:', e))
   }
 
+  // profiles.role reste la source de vérité legacy ; chaque modification
+  // d'un rôle ou de l'état actif est reflétée dans le profil RBAC.
+  if (body.role !== undefined || body.actif !== undefined) {
+    const { data: profile, error: currentProfileError } = await supabaseAdmin
+      .from('profiles')
+      .select('role, actif')
+      .eq('id', id)
+      .single()
+
+    if (currentProfileError || !profile) {
+      return c.json({ error: currentProfileError?.message ?? 'Profil introuvable après mise à jour' }, 500)
+    }
+
+    const rbacRoleName = LEGACY_TO_RBAC[profile.role as ForgeRole]
+    const { data: rbacRole, error: rbacRoleError } = await supabaseAdmin
+      .from('rbac_roles')
+      .select('id')
+      .eq('name', rbacRoleName)
+      .single()
+
+    if (rbacRoleError || !rbacRole) {
+      return c.json({ error: 'Rôle RBAC introuvable ; exécutez le seed RBAC.' }, 500)
+    }
+
+    const { error: rbacProfileError } = await supabaseAdmin
+      .from('rbac_user_profiles')
+      .upsert(
+        { profile_id: id, role_id: rbacRole.id, is_active: profile.actif },
+        { onConflict: 'profile_id' },
+      )
+
+    if (rbacProfileError) return c.json({ error: rbacProfileError.message }, 500)
+    invalidatePermissionCache(id)
+  }
+
   return c.json({ success: true })
 })
 
 // Mapping rôle RBAC → rôle legacy profiles.role
 const RBAC_TO_LEGACY: Record<string, ForgeRole> = {
   SUPER_ADMIN: 'admin',
-  MANAGER:     'superviseur',
-  COMMERCIAL:  'operateur',
-  CAISSIER:    'operateur',
-  MAGASINIER:  'operateur',
-  FORMATEUR:   'technicien',
-  READONLY:    'technicien',
+  OPS_MANAGER: 'superviseur',
+  DISPATCHER: 'operateur',
+  PARTNER_MANAGER: 'superviseur',
+  FINANCE_MANAGER: 'superviseur',
+  AUDITOR: 'apprenant',
+}
+
+const LEGACY_TO_RBAC: Record<ForgeRole, typeof RBAC_ROLE_NAMES[number]> = {
+  admin:       'SUPER_ADMIN',
+  superviseur: 'OPS_MANAGER',
+  operateur:   'DISPATCHER',
+  apprenant:   'AUDITOR',
 }
 
 // ── POST /api/admin/users/invite ──────────────────────────────────────────────
@@ -196,7 +245,7 @@ adminRouter.post('/users/invite', async (c) => {
             { profile_id: data.user.id, role_id: roleRow.id, is_active: true, password_must_change: true },
             { onConflict: 'profile_id' },
           )
-          .catch((e) => console.error('[admin] rbac_user_profiles upsert failed:', e))
+          .then(() => {}, (e: unknown) => console.error('[admin] rbac_user_profiles upsert failed:', e))
       }
     }
   }
@@ -477,10 +526,10 @@ adminRouter.patch(
     const caller = c.get('user')
     const { permissions } = c.req.valid('json')
 
-    const permCheck = await checkPermission(caller.id, 'ADMIN', 'CONFIGURE', caller.role)
+    const permCheck = await checkPermission(caller.id, 'UTILISATEURS', 'CONFIGURE', caller.role)
     if (!permCheck.allowed) return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
 
-    // Garde-rail : SUPER_ADMIN ne peut pas perdre ADMIN:CONFIGURE
+    // Garde-rail : SUPER_ADMIN ne peut pas perdre UTILISATEURS:CONFIGURE
     const { data: roleRow } = await db
       .from('rbac_roles')
       .select('name')
@@ -489,11 +538,11 @@ adminRouter.patch(
 
     if (roleRow?.name === 'SUPER_ADMIN') {
       const removingConfigure = permissions.some(
-        p => p.module === 'ADMIN' && p.action === 'CONFIGURE' && !p.granted,
+        p => p.module === 'UTILISATEURS' && p.action === 'CONFIGURE' && !p.granted,
       )
       if (removingConfigure) {
         return c.json({
-          error: 'SUPER_ADMIN doit toujours conserver ADMIN:CONFIGURE',
+          error: 'SUPER_ADMIN doit toujours conserver UTILISATEURS:CONFIGURE',
           code:  'IMMUTABLE_RULE',
         }, 400)
       }

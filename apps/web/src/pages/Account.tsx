@@ -5,7 +5,7 @@ import {
   CheckCircle, ChevronRight, Lock, Crown,
   Phone, Save, Loader2, Globe, MapPin,
 } from 'lucide-react'
-import { Button } from '@forge/ui'
+import { Button } from '@maideres/ui'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -15,10 +15,10 @@ import { useProfile } from '@/hooks/useProfile'
 // ── Role config ───────────────────────────────────────────────────────────────
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  admin:       { label: 'Admin',       color: '#C62828', bg: '#FFEBEE' },
-  superviseur: { label: 'Superviseur', color: '#1d4ed8', bg: '#dbeafe' },
-  operateur:   { label: 'Opérateur',   color: '#15803d', bg: '#dcfce7' },
-  technicien:  { label: 'Technicien',  color: '#6b7280', bg: '#f3f4f6' },
+  admin:       { label: 'Admin',       color: '#7A1F5C', bg: '#F7E4F0' },
+  superviseur: { label: 'Superviseur', color: '#1B3D6E', bg: '#E4EAF4' },
+  operateur:   { label: 'Opérateur',   color: '#5A3E08', bg: '#FDEFD6' },
+  technicien:  { label: 'Technicien',  color: '#254C8C', bg: '#EEF3FA' },
 }
 
 // ── Shared field ──────────────────────────────────────────────────────────────
@@ -43,11 +43,11 @@ function Field({
 
 const inputCls =
   'w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#C62828] focus:border-transparent transition-shadow bg-white'
+  'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow bg-white'
 
 const inputIconCls =
   'w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#C62828] focus:border-transparent transition-shadow bg-white'
+  'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow bg-white'
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: PROFIL
@@ -113,7 +113,7 @@ function TabProfil() {
           {initial}
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-bold text-[#212121] truncate">{displayName}</p>
+          <p className="text-lg font-bold text-foreground truncate">{displayName}</p>
           <p className="text-sm text-gray-400 truncate">{email}</p>
           <span
             className="inline-block mt-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full"
@@ -229,7 +229,7 @@ function TabSecurite() {
     <div className="max-w-lg space-y-6">
 
       <div>
-        <h3 className="text-sm font-semibold text-[#212121] mb-4">Changer le mot de passe</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-4">Changer le mot de passe</h3>
         <div className="space-y-4">
 
           <Field label="Mot de passe actuel" icon={<Key className="h-3.5 w-3.5" />}>
@@ -335,7 +335,7 @@ function TabPermissions() {
               key={label}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
                 ok
-                  ? 'border-green-100 bg-green-50 text-[#212121]'
+                  ? 'border-green-100 bg-green-50 text-foreground'
                   : 'border-gray-100 bg-gray-50 text-gray-400'
               }`}
             >
@@ -348,14 +348,14 @@ function TabPermissions() {
       </div>
 
       {appRole === 'admin' && (
-        <div className="flex items-center justify-between gap-4 p-4 bg-[#FFEBEE] border border-[#FFCDD2] rounded-xl text-sm text-[#C62828]">
+        <div className="flex items-center justify-between gap-4 p-4 bg-accent border border-[#FFCDD2] rounded-xl text-sm text-[#A82D7E]">
           <div>
             <p className="font-semibold">Accès administrateur complet</p>
-            <p className="text-xs mt-0.5 text-[#C62828]/70">Vous pouvez inviter des utilisateurs et modifier leurs rôles depuis l'administration.</p>
+            <p className="text-xs mt-0.5 text-[#A82D7E]/70">Vous pouvez inviter des utilisateurs et modifier leurs rôles depuis l'administration.</p>
           </div>
           <button
             onClick={() => navigate('/admin')}
-            className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-[#C62828] text-white hover:bg-[#B71C1C] transition-colors"
+            className="shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#E09A2E] transition-colors"
           >
             <Crown className="h-3.5 w-3.5" /> Gérer
           </button>
@@ -406,7 +406,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
       aria-checked={checked}
       onClick={onChange}
       className="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors"
-      style={{ backgroundColor: checked ? '#C62828' : '#e5e7eb' }}
+      style={{ backgroundColor: checked ? '#254C8C' : '#e5e7eb' }}
     >
       <span
         className="block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200"
@@ -422,7 +422,7 @@ function TabPreferences({ userId }: { userId: string }) {
   const notifications: Array<{ key: keyof Prefs; label: string; desc: string }> = [
     { key: 'stocks_critiques',    label: 'Alertes stocks critiques', desc: 'Quand un produit atteint son seuil critique' },
     { key: 'nouvelles_commandes', label: 'Nouvelles commandes',       desc: 'À chaque nouvelle commande ERP ou web' },
-    { key: 'alertes_ia',          label: 'Alertes Intelligence IA',   desc: 'Alertes proactives générées par FORGE AI' },
+    { key: 'alertes_ia',          label: 'Alertes Intelligence IA',   desc: 'Alertes proactives générées par MAIDERES AI' },
     { key: 'resume_quotidien',    label: 'Résumé quotidien',          desc: 'Rapport journalier envoyé chaque matin' },
   ]
 
@@ -441,7 +441,7 @@ function TabPreferences({ userId }: { userId: string }) {
               onClick={() => setPref('langue', lang)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border-2 transition-all ${
                 prefs.langue === lang
-                  ? 'bg-[#C62828] text-white border-[#C62828] shadow-sm'
+                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
                   : 'border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -465,7 +465,7 @@ function TabPreferences({ userId }: { userId: string }) {
               onClick={() => setPref(key, !(prefs[key] as boolean) as Prefs[typeof key])}
             >
               <div>
-                <p className="text-sm font-medium text-[#212121] group-hover:text-[#C62828] transition-colors">{label}</p>
+                <p className="text-sm font-medium text-foreground group-hover:text-[#A82D7E] transition-colors">{label}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
               </div>
               <Toggle
@@ -544,7 +544,7 @@ export default function Account() {
 
       {/* ── Header ── */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-[#212121]">Mon compte</h1>
+        <h1 className="text-xl font-bold text-foreground">Mon compte</h1>
         <p className="text-sm text-gray-400 mt-0.5">Gérez votre profil, votre sécurité et vos préférences</p>
       </div>
 
@@ -562,7 +562,7 @@ export default function Account() {
             >
               {initial}
             </div>
-            <p className="mt-2 text-sm font-semibold text-[#212121] truncate">{displayName}</p>
+            <p className="mt-2 text-sm font-semibold text-foreground truncate">{displayName}</p>
             {profile?.nom && (
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
             )}
@@ -584,13 +584,13 @@ export default function Account() {
                   onClick={() => setActiveTab(key)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left border-l-2 ${
                     active
-                      ? 'border-[#C62828] text-[#C62828] bg-[#FFEBEE]'
-                      : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-[#212121]'
+                      ? 'border-[#254C8C] text-[#254C8C] bg-accent'
+                      : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-foreground'
                   }`}
                 >
-                  <span className={active ? 'text-[#C62828]' : 'text-gray-400'}>{icon}</span>
+                  <span className={active ? 'text-[#254C8C]' : 'text-gray-400'}>{icon}</span>
                   {label}
-                  {active && <ChevronRight className="ml-auto h-3.5 w-3.5 text-[#C62828]" />}
+                  {active && <ChevronRight className="ml-auto h-3.5 w-3.5 text-[#254C8C]" />}
                 </button>
               )
             })}
@@ -603,14 +603,14 @@ export default function Account() {
             </div>
             <button
               onClick={() => navigate('/securite')}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-[#212121] transition-colors text-left"
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-foreground transition-colors text-left"
             >
               <Shield className="h-3.5 w-3.5 text-gray-400" /> Sécurité & accès
             </button>
             {appRole === 'admin' && (
               <button
                 onClick={() => navigate('/admin')}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-[#C62828] transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-gray-500 hover:bg-gray-50 hover:text-[#A82D7E] transition-colors text-left"
               >
                 <Crown className="h-3.5 w-3.5 text-gray-400" /> Administration
               </button>
@@ -620,7 +620,7 @@ export default function Account() {
           {/* Déconnexion */}
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-red-100 text-[#C62828]
+            className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-red-100 text-[#A82D7E]
               hover:bg-red-50 transition-colors text-sm font-medium bg-white shadow-sm"
           >
             <LogOut className="h-4 w-4" />
@@ -646,8 +646,8 @@ export default function Account() {
                   onClick={() => setActiveTab(key)}
                   className={`flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all shrink-0 ${
                     active
-                      ? 'bg-[#C62828] text-white shadow-sm'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-[#212121]'
+                      ? 'bg-[#254C8C] text-white shadow-sm'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-foreground'
                   }`}
                 >
                   <span className={active ? 'text-white' : 'text-gray-400'}>{icon}</span>
@@ -677,7 +677,7 @@ export default function Account() {
             <button
               onClick={handleSignOut}
               className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl
-                border border-red-100 text-[#C62828] hover:bg-red-50 transition-colors text-sm font-medium bg-white shadow-sm"
+                border border-red-100 text-[#A82D7E] hover:bg-red-50 transition-colors text-sm font-medium bg-white shadow-sm"
             >
               <LogOut className="h-4 w-4" />
               Se déconnecter

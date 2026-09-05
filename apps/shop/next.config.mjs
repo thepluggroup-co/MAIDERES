@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@forge/ui', '@forge/shared'],
+  transpilePackages: ['@maideres/ui', '@maideres/shared'],
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [

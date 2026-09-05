@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { PageHeader, EmptyState } from '@forge/ui'
+import { PageHeader, EmptyState } from '@maideres/ui'
 import { Construction } from 'lucide-react'
 
 interface ModulePageProps {
@@ -18,13 +18,13 @@ export default function ModulePage({ title, subtitle }: ModulePageProps) {
     >
       <PageHeader
         title={title}
-        subtitle={subtitle ?? `Module ${title} — FORGE ERP`}
-        breadcrumbs={[{ label: 'FORGE', href: '/' }, { label: title }]}
+        subtitle={subtitle ?? `Module ${title} — à venir`}
+        breadcrumbs={[{ label: 'MAIDERES', href: '/' }, { label: title }]}
       />
       <EmptyState
         icon={<Construction className="h-8 w-8" />}
         title="Module en cours de développement"
-        description="Ce module sera disponible dans une prochaine version de FORGE."
+        description="Ce module sera disponible dans une prochaine version de la Console MAIDERES."
       />
     </motion.div>
   )

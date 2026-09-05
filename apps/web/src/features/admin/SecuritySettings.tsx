@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Shield, Clock, Lock, AlertTriangle, TrendingDown, Users, CheckCircle } from 'lucide-react'
-import { Button } from '@forge/ui'
+import { Button } from '@maideres/ui'
 import { useSecuritySettings, useLoginStats } from '@/hooks/useRbac'
 
 // ── NumberInput ───────────────────────────────────────────────────────────────
@@ -101,20 +101,7 @@ export function SecuritySettings() {
   async function handleSave() {
     setSaving(true)
     try {
-      await save({
-        passwordMinLength:      form.password_min_length,
-        passwordRequireUpper:   form.password_require_upper,
-        passwordRequireNumber:  form.password_require_number,
-        passwordRequireSpecial: form.password_require_special,
-        passwordExpirationDays: form.password_expiration_days,
-        maxLoginAttempts:       form.max_login_attempts,
-        lockoutDurationMinutes: form.lockout_duration_minutes,
-        sessionTimeoutMinutes:  form.session_timeout_minutes,
-        allowedHoursEnabled:    form.allowed_hours_enabled,
-        allowedHoursStart:      form.allowed_hours_start,
-        allowedHoursEnd:        form.allowed_hours_end,
-        allowedDays:            form.allowed_days,
-      })
+      await save({ ...form })
     } finally {
       setSaving(false)
     }

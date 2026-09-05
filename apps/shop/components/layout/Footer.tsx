@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import { Mail, MapPin, Phone, ShieldCheck, Truck, Wallet, Headphones } from 'lucide-react'
-import { MetalForgeLogo } from '@/components/ui/BrandLogo'
+import { MaideresLogo } from '@/components/ui/BrandLogo'
 
 export function Footer() {
   const whatsapp = '237695884528'
 
   return (
-    <footer className="bg-[#111820] text-white">
-      <div className="border-y border-gray-200 bg-white text-forge-dark">
+    <footer className="bg-[#1B1F2A] text-white">
+      <div className="border-y border-gray-200 bg-white text-brand-ink">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
           {[
             { icon: Truck, title: 'Livraison rapide', text: 'Partout au Cameroun' },
@@ -16,7 +16,7 @@ export function Footer() {
             { icon: Headphones, title: 'Support client', text: 'Lun - Sam : 7h30 - 18h' },
           ].map(({ icon: Icon, title, text }) => (
             <div key={title} className="flex items-center gap-3">
-              <Icon size={25} className="text-forge-steel" />
+              <Icon size={25} className="text-brand-indigo" />
               <div>
                 <p className="text-sm font-black">{title}</p>
                 <p className="text-xs text-gray-500">{text}</p>
@@ -29,7 +29,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1.2fr]">
           <div>
-            <MetalForgeLogo size={30} variant="white" />
+            <MaideresLogo size={30} variant="white" />
             <p className="mt-4 max-w-xs text-sm leading-6 text-gray-400">
               MAIDERES connecte vos besoins du quotidien avec des prestataires de confiance à Douala.
             </p>
@@ -48,9 +48,9 @@ export function Footer() {
           <div>
             <p className="mb-4 text-sm font-black uppercase tracking-wider text-gray-300">Contact</p>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li className="flex gap-2"><MapPin size={16} className="mt-0.5 shrink-0 text-forge-red" /> Douala, Cameroun</li>
-              <li className="flex gap-2"><Phone size={16} className="shrink-0 text-forge-red" /> +237 695884528</li>
-              <li className="flex gap-2"><Mail size={16} className="shrink-0 text-forge-red" /> contact@maideres.cm</li>
+              <li className="flex gap-2"><MapPin size={16} className="mt-0.5 shrink-0 text-brand-gold" /> Douala, Cameroun</li>
+              <li className="flex gap-2"><Phone size={16} className="shrink-0 text-brand-gold" /> +237 695884528</li>
+              <li className="flex gap-2"><Mail size={16} className="shrink-0 text-brand-gold" /> contact@maideres.com</li>
             </ul>
           </div>
         </div>

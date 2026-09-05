@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/compte/', '/commander/', '/paiement-en-cours/'],
       },
     ],
-    sitemap: 'https://shop.tafdil.cm/sitemap.xml',
+    sitemap: 'https://maideres.vercel.app/sitemap.xml',
   }
 }

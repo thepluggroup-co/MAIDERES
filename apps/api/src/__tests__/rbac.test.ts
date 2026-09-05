@@ -1,5 +1,5 @@
 /**
- * FORGE ERP — Tests Vitest — Module RBAC
+ * MAIDERES — Tests Vitest — Module RBAC
  * Tests : checkPermission (IMMUTABLE_RULES, cache, DB), rateLimiter,
  *         requirePermission middleware (200/401/403), guardrail PermissionsMatrix.
  */
@@ -7,11 +7,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ── Mock Supabase ──────────────────────────────────────────────────────────────
 
-vi.mock('@forge/db', () => ({
+vi.mock('@maideres/db', () => ({
   supabaseAdmin: { from: vi.fn() },
 }))
 
-import { supabaseAdmin } from '@forge/db'
+import { supabaseAdmin } from '@maideres/db'
 import {
   checkPermission,
   checkLoginAttempts,
@@ -67,33 +67,32 @@ describe('checkPermission — IMMUTABLE_RULES', () => {
     invalidatePermissionCache('user-anon')
   })
 
-  it('SUPER_ADMIN a toujours ADMIN:CONFIGURE', async () => {
+  it('SUPER_ADMIN a toujours UTILISATEURS:CONFIGURE', async () => {
     mockDb({
       rbac_user_profiles:    { data: { role_id: 'role-sa', is_active: true }, error: null },
       rbac_roles:            { data: { id: 'role-sa', name: 'SUPER_ADMIN' }, error: null },
       rbac_role_permissions: { data: [], error: null },
     })
-    const result = await checkPermission('user-super', 'ADMIN', 'CONFIGURE')
+    const result = await checkPermission('user-super', 'UTILISATEURS', 'CONFIGURE')
     expect(result.allowed).toBe(true)
     expect(result.roleName).toBe('SUPER_ADMIN')
   })
 
-  it('MANAGER ne peut pas accéder à ADMIN:CONFIGURE', async () => {
+  it('OPS_MANAGER ne peut pas accéder à UTILISATEURS:CONFIGURE', async () => {
     mockDb({
       rbac_user_profiles:    { data: { role_id: 'role-mgr', is_active: true }, error: null },
-      rbac_roles:            { data: { id: 'role-mgr', name: 'MANAGER' }, error: null },
+      rbac_roles:            { data: { id: 'role-mgr', name: 'OPS_MANAGER' }, error: null },
       rbac_role_permissions: { data: [], error: null },
     })
-    const result = await checkPermission('user-manager', 'ADMIN', 'CONFIGURE')
+    const result = await checkPermission('user-manager', 'UTILISATEURS', 'CONFIGURE')
     expect(result.allowed).toBe(false)
     expect(result.reason).toContain('IMMUTABLE_RULE')
   })
 
-  it('Personne ne peut supprimer ADMIN (audit_logs DELETE)', async () => {
-    // ADMIN:DELETE est interdit globalement (immutable rule)
-    const result = await checkPermission('user-anon', 'ADMIN', 'DELETE')
+  it('Personne ne peut supprimer AUDIT (journal append-only)', async () => {
+    const result = await checkPermission('user-anon', 'AUDIT', 'DELETE')
     expect(result.allowed).toBe(false)
-    expect(result.reason).toBe('IMMUTABLE_RULE:ADMIN_DELETE')
+    expect(result.reason).toBe('IMMUTABLE_RULE:AUDIT_DELETE')
   })
 
   it('READONLY ne peut pas créer (CREATE refusé par IMMUTABLE_RULES)', async () => {
@@ -170,17 +169,17 @@ describe('checkPermission — cache', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 describe('checkPermission — fallback legacy role', () => {
-  it('operateur → COMMERCIAL peut lire STOCK (via ROLE_MAP)', async () => {
+  it('operateur → DISPATCHER peut lire STOCK (via ROLE_MAP legacy)', async () => {
     invalidatePermissionCache('user-legacy')
     mockDb({
       rbac_user_profiles:    { data: null, error: { code: 'PGRST116' } },
-      rbac_roles:            { data: { id: 'role-comm', name: 'COMMERCIAL' }, error: null },
+      rbac_roles:            { data: { id: 'role-comm', name: 'DISPATCHER' }, error: null },
       rbac_role_permissions: { data: [{ permission_id: 'perm-read-001' }], error: null },
       rbac_permissions:      { data: [{ module: 'STOCK', action: 'READ' }], error: null },
     })
     const result = await checkPermission('user-legacy', 'STOCK', 'READ', 'operateur')
     expect(result.allowed).toBe(true)
-    expect(result.roleName).toBe('COMMERCIAL')
+    expect(result.roleName).toBe('DISPATCHER')
   })
 
   it('utilisateur désactivé est refusé', async () => {
@@ -287,7 +286,7 @@ describe('requirePermission — middleware', () => {
       rbac_role_permissions: { data: [], error: null },
     })
     const { requirePermission } = await import('../middleware/permission.middleware')
-    const mw = requirePermission('ADMIN', 'CONFIGURE')
+    const mw = requirePermission('UTILISATEURS', 'CONFIGURE')
     const ctx = makeCtx('mw-deny', 'apprenant')
     const res = await mw(ctx as never, async () => {})
     expect((res as { status: number }).status).toBe(403)
@@ -301,7 +300,7 @@ describe('requirePermission — middleware', () => {
       rbac_role_permissions: { data: [], error: null },
     })
     const { requirePermission } = await import('../middleware/permission.middleware')
-    const mw = requirePermission('STOCK', 'READ')
+    const mw = requirePermission('DEMANDES', 'READ')
     const ctx = makeCtx('mw-ok', 'admin')
     let nextCalled = false
     await mw(ctx as never, async () => { nextCalled = true })
@@ -333,16 +332,16 @@ describe('writeAuditLog', () => {
 describe('Zod validation — RBAC routes', () => {
   it('rbacRoleName invalide est rejeté', () => {
     const { z } = require('zod') as typeof import('zod')
-    const RBAC_ROLE_NAMES = ['SUPER_ADMIN','MANAGER','COMMERCIAL','CAISSIER','MAGASINIER','FORMATEUR','READONLY'] as const
+    const RBAC_ROLE_NAMES = ['SUPER_ADMIN','OPS_MANAGER','DISPATCHER','PARTNER_MANAGER','FINANCE_MANAGER','AUDITOR'] as const
     const schema = z.object({ rbacRoleName: z.enum(RBAC_ROLE_NAMES).optional() })
     expect(() => schema.parse({ rbacRoleName: 'DICTATEUR' })).toThrow()
   })
 
   it('rbacRoleName valide passe', () => {
     const { z } = require('zod') as typeof import('zod')
-    const RBAC_ROLE_NAMES = ['SUPER_ADMIN','MANAGER','COMMERCIAL','CAISSIER','MAGASINIER','FORMATEUR','READONLY'] as const
+    const RBAC_ROLE_NAMES = ['SUPER_ADMIN','OPS_MANAGER','DISPATCHER','PARTNER_MANAGER','FINANCE_MANAGER','AUDITOR'] as const
     const schema = z.object({ rbacRoleName: z.enum(RBAC_ROLE_NAMES).optional() })
-    expect(() => schema.parse({ rbacRoleName: 'MANAGER' })).not.toThrow()
+    expect(() => schema.parse({ rbacRoleName: 'OPS_MANAGER' })).not.toThrow()
   })
 
   it('allowed_hours format invalide est rejeté', () => {

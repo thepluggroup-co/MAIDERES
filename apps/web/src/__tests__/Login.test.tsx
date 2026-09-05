@@ -79,7 +79,7 @@ describe('Test 12 — soumission avec email vide', () => {
 
   it('le champ email a l\'attribut required', () => {
     render(<Login />)
-    const emailInput = screen.getByPlaceholderText('vous@tafdil.cm')
+    const emailInput = screen.getByPlaceholderText('vous@maideres.com')
     expect(emailInput).toBeRequired()
   })
 
@@ -93,17 +93,17 @@ describe('Test 12 — soumission avec email vide', () => {
 // ── Test 13 — Credentials corrects → redirect /production ─────────────────────
 
 describe('Test 13 — soumission avec credentials corrects', () => {
-  it('navigue vers /production après connexion réussie', async () => {
+  it('navigue vers /dashboard après connexion réussie', async () => {
     mockSignIn.mockResolvedValueOnce({ error: null })
     const user = userEvent.setup()
     render(<Login />)
 
-    await user.type(screen.getByPlaceholderText('vous@tafdil.cm'), 'admin@tafdil.com')
+    await user.type(screen.getByPlaceholderText('vous@maideres.com'), 'admin@maideres.com')
     await user.type(screen.getByPlaceholderText('••••••••'), 'motdepasse-correct')
     await user.click(screen.getByRole('button', { name: /Se connecter/i }))
 
-    expect(mockSignIn).toHaveBeenCalledWith('admin@tafdil.com', 'motdepasse-correct')
-    expect(mockNavigate).toHaveBeenCalledWith('/production', { replace: true })
+    expect(mockSignIn).toHaveBeenCalledWith('admin@maideres.com', 'motdepasse-correct')
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true })
   })
 
   it('pas de message d\'erreur après connexion réussie', async () => {
@@ -111,7 +111,7 @@ describe('Test 13 — soumission avec credentials corrects', () => {
     const user = userEvent.setup()
     render(<Login />)
 
-    await user.type(screen.getByPlaceholderText('vous@tafdil.cm'), 'admin@tafdil.com')
+    await user.type(screen.getByPlaceholderText('vous@maideres.com'), 'admin@maideres.com')
     await user.type(screen.getByPlaceholderText('••••••••'), 'motdepasse-correct')
     await user.click(screen.getByRole('button', { name: /Se connecter/i }))
 
@@ -126,7 +126,7 @@ describe('Test 13 — soumission avec credentials corrects', () => {
     const user = userEvent.setup()
     render(<Login />)
 
-    await user.type(screen.getByPlaceholderText('vous@tafdil.cm'), 'admin@tafdil.com')
+    await user.type(screen.getByPlaceholderText('vous@maideres.com'), 'admin@maideres.com')
     await user.type(screen.getByPlaceholderText('••••••••'), 'motdepasse-correct')
     await user.click(screen.getByRole('button', { name: /Se connecter/i }))
 
@@ -144,7 +144,7 @@ describe('Test 14 — soumission avec credentials incorrects', () => {
     const user = userEvent.setup()
     render(<Login />)
 
-    await user.type(screen.getByPlaceholderText('vous@tafdil.cm'), 'wrong@tafdil.cm')
+    await user.type(screen.getByPlaceholderText('vous@maideres.com'), 'wrong@maideres.com')
     await user.type(screen.getByPlaceholderText('••••••••'), 'mauvais-mdp')
     await user.click(screen.getByRole('button', { name: /Se connecter/i }))
 
@@ -156,7 +156,7 @@ describe('Test 14 — soumission avec credentials incorrects', () => {
     const user = userEvent.setup()
     render(<Login />)
 
-    await user.type(screen.getByPlaceholderText('vous@tafdil.cm'), 'wrong@tafdil.cm')
+    await user.type(screen.getByPlaceholderText('vous@maideres.com'), 'wrong@maideres.com')
     await user.type(screen.getByPlaceholderText('••••••••'), 'mauvais-mdp')
     await user.click(screen.getByRole('button', { name: /Se connecter/i }))
 
@@ -169,7 +169,7 @@ describe('Test 14 — soumission avec credentials incorrects', () => {
     const user = userEvent.setup()
     render(<Login />)
 
-    await user.type(screen.getByPlaceholderText('vous@tafdil.cm'), 'wrong@tafdil.cm')
+    await user.type(screen.getByPlaceholderText('vous@maideres.com'), 'wrong@maideres.com')
     await user.type(screen.getByPlaceholderText('••••••••'), 'mauvais-mdp')
     await user.click(screen.getByRole('button', { name: /Se connecter/i }))
 

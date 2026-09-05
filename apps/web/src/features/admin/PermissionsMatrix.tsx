@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Save, AlertTriangle, X } from 'lucide-react'
-import { Button } from '@forge/ui'
+import { Button } from '@maideres/ui'
 import {
   useRolePermissions,
   useSaveRolePermissions,
@@ -13,8 +13,9 @@ import {
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const MODULES: RbacModule[] = [
-  'STOCK', 'COMMERCIAL', 'FINANCE', 'HR',
-  'PRODUCTION', 'LOGISTICS', 'ADMIN', 'REPORTS', 'RECEIVABLES',
+  'DEMANDES', 'MATCHING', 'PRESTATAIRES', 'CLIENTS',
+  'INTERVENTIONS', 'TRANSACTIONS', 'REVERSEMENTS',
+  'PARAMETRAGE', 'UTILISATEURS', 'REPORTS', 'AUDIT',
 ]
 
 const ACTIONS: RbacAction[] = [
@@ -22,15 +23,17 @@ const ACTIONS: RbacAction[] = [
 ]
 
 const MODULE_LABELS: Record<RbacModule, string> = {
-  STOCK:       'Stock',
-  COMMERCIAL:  'Commercial',
-  FINANCE:     'Finance',
-  HR:          'RH',
-  PRODUCTION:  'Production',
-  LOGISTICS:   'Logistique',
-  ADMIN:       'Admin',
-  REPORTS:     'Rapports',
-  RECEIVABLES: 'Créances',
+  DEMANDES:       'Demandes',
+  MATCHING:       'Mise en relation',
+  PRESTATAIRES:   'Prestataires',
+  CLIENTS:        'Clients',
+  INTERVENTIONS:  'Interventions',
+  TRANSACTIONS:   'Transactions',
+  REVERSEMENTS:   'Reversements',
+  PARAMETRAGE:    'Paramétrage',
+  UTILISATEURS:   'Utilisateurs',
+  REPORTS:        'Rapports',
+  AUDIT:          'Journal d’audit',
 }
 
 const ACTION_LABELS: Record<RbacAction, string> = {
@@ -45,8 +48,8 @@ const ACTION_LABELS: Record<RbacAction, string> = {
 
 // Règles immutables côté UI
 const IMMUTABLE_PAIRS = new Set([
-  'ADMIN:CONFIGURE',
-  'ADMIN:DELETE',
+  'UTILISATEURS:CONFIGURE',
+  'AUDIT:DELETE',
 ])
 
 interface PermissionsMatrixProps {
@@ -108,8 +111,8 @@ export function PermissionsMatrix({ rbacName, label, onClose }: PermissionsMatri
 
     // Immutable permissions cannot be toggled
     if (IMMUTABLE_PAIRS.has(key)) return
-    // SUPER_ADMIN cannot lose ADMIN:CONFIGURE
-    if (rbacName === 'SUPER_ADMIN' && key === 'ADMIN:CONFIGURE') return
+    // SUPER_ADMIN cannot lose UTILISATEURS:CONFIGURE
+    if (rbacName === 'SUPER_ADMIN' && key === 'UTILISATEURS:CONFIGURE') return
 
     setGranted(prev => {
       const next = new Set(prev)
@@ -172,7 +175,7 @@ export function PermissionsMatrix({ rbacName, label, onClose }: PermissionsMatri
             <tr>
               <th className="text-left px-4 py-3 font-medium text-gray-600 w-36">Module</th>
               {ACTIONS.map(action => (
-                <th key={action} className="px-3 py-3 font-medium text-gray-600 text-center min-w-[80px]">
+                <th key={action} className="px-3 py-3 font-medium text-gray-600 text-center min-w-20">
                   {ACTION_LABELS[action]}
                 </th>
               ))}
@@ -188,7 +191,7 @@ export function PermissionsMatrix({ rbacName, label, onClose }: PermissionsMatri
                   const key         = `${module}:${action}`
                   const isGranted   = granted.has(key)
                   const isImmutable = IMMUTABLE_PAIRS.has(key)
-                  const isSuperLock = rbacName === 'SUPER_ADMIN' && key === 'ADMIN:CONFIGURE'
+                  const isSuperLock = rbacName === 'SUPER_ADMIN' && key === 'UTILISATEURS:CONFIGURE'
 
                   return (
                     <td key={action} className="px-3 py-3 text-center">

@@ -1,21 +1,22 @@
 {
-  "name": "@forge/api",
+  "name": "@maideres/api",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=.env src/index.ts",
+    "dev": "tsx watch --env-file=../../.env src/index.ts",
     "build": "tsup",
     "start": "node dist/index.js",
     "lint": "eslint src",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
-    "@forge/ai": "workspace:*",
-    "@forge/db": "workspace:*",
-    "@forge/shared": "workspace:*",
+    "@maideres/ai": "workspace:*",
+    "@maideres/db": "workspace:*",
+    "@maideres/shared": "workspace:*",
     "@hono/node-server": "^1.12.0",
     "@hono/zod-validator": "^0.8.0",
     "@supabase/supabase-js": "^2.105.4",

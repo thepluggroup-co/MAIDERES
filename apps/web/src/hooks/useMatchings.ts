@@ -1,19 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
+import type { Matching, MatchingStatut } from '@maideres/contracts'
 
-export type MatchingStatut = 'propose' | 'accepte' | 'refuse' | 'realise' | 'echoue'
-
-export interface Matching {
-  id:             string
-  demande_id:     string
-  prestataire_id: string
-  operateur_id:   string | null
-  statut:         MatchingStatut
-  motif_echec:    string | null
-  proposed_at:    string
-  closed_at:      string | null
-}
+export type { Matching, MatchingStatut }
 
 export function useMatchings(filter: { demande_id?: string; statut?: MatchingStatut } = {}) {
   const params = new URLSearchParams()

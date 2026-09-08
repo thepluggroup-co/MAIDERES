@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { PreviewCommissionQuerySchema, CreateTransactionSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
@@ -21,16 +21,10 @@ const TRANSACTION_FIELDS =
 // ── GET /api/transactions/preview-commission — estimation avant création ─────
 // Staff uniquement. Appelle le même calcul (calculer_commission, via RPC) que
 // le trigger qui alimentera la transaction — jamais de logique dupliquée.
-const previewSchema = z.object({
-  montant_service: z.coerce.number().int().positive(),
-  categorie_id:    z.string().uuid().optional(),
-  prestataire_id:  z.string().uuid().optional(),
-})
-
 transactionsRouter.get(
   '/preview-commission',
   requireRole(['admin', 'superviseur', 'operateur']),
-  zValidator('query', previewSchema),
+  zValidator('query', PreviewCommissionQuerySchema),
   async (c) => {
     const { montant_service, categorie_id, prestataire_id } = c.req.valid('query')
 
@@ -130,15 +124,10 @@ async function canAccessTransaction(
 //    réalisé (staff). commission_taux/commission_montant ne sont jamais
 //    acceptés en entrée : ils viennent exclusivement du trigger
 //    trg_transactions_commission (public.calculer_commission), voir 0011. ──
-const createSchema = z.object({
-  matching_id:     z.string().uuid(),
-  montant_service: z.number().int().positive(),
-})
-
 transactionsRouter.post(
   '/',
   requireRole(['admin', 'superviseur', 'operateur']),
-  zValidator('json', createSchema),
+  zValidator('json', CreateTransactionSchema),
   async (c) => {
     const body = c.req.valid('json')
 

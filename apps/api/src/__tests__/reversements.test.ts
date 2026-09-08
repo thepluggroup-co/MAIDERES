@@ -82,7 +82,7 @@ describe('GET /api/reversements — filtrage par rôle', () => {
   })
 
   it('un prestataire ne voit que ses propres reversements', async () => {
-    const res = await call('GET', '/api/reversements', 'livreur', PRESTATAIRE_USER_ID)
+    const res = await call('GET', '/api/reversements', 'apprenant', PRESTATAIRE_USER_ID)
     const body = await res.json() as { data: { id: string; prestataire_id: string }[] }
     expect(res.status).toBe(200)
     expect(body.data).toHaveLength(3)

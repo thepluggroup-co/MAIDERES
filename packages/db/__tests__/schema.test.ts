@@ -7,6 +7,7 @@ import {
   profilesPg, auditLogPg, categoriesServicesPg, prestatairesPg, clientsPg, demandesPg,
   matchingsPg, transactionsPg, avisPg, reversementsPg, notificationsLogPg,
   interventionsPg, interventionEvenementsPg, commissionConfigPg, slaConfigPg,
+  offresPg, promotionsPg, realisationsPg,
   roleEnum, prestataireStatutEnum, demandeCanalEnum, demandeStatutEnum,
   matchingStatutEnum, paiementStatutEnum, reversementStatutEnum,
   notifCanalEnum, notifStatutEnum, typeClientEnum, sourceClientEnum,
@@ -37,10 +38,54 @@ describe('Tables marketplace — noms et colonnes', () => {
     expect(columnNames(prestatairesPg)).toEqual([
       'id', 'profile_id', 'nom', 'telephone', 'categories', 'quartier',
       'geoloc_lat', 'geoloc_lng', 'statut', 'note_moyenne', 'taux_commission',
-      'date_recrutement',
+      'date_recrutement', 'ville', 'metier', 'bio', 'disponible', 'zones_couverture',
     ])
     expect(cfg.foreignKeys).toHaveLength(1)
     expect(cfg.foreignKeys[0].reference().foreignTable).toBe(profilesPg)
+  })
+
+  it("prestataires (0027) : les colonnes self-service (ville/metier/bio/zones_couverture) n'ont pas de valeur par défaut piégeuse — disponible seul a un défaut (true)", () => {
+    const byName = Object.fromEntries(getTableConfig(prestatairesPg).columns.map((c) => [c.name, c]))
+    expect(byName.ville.notNull).toBe(false)
+    expect(byName.metier.notNull).toBe(false)
+    expect(byName.bio.notNull).toBe(false)
+    expect(byName.disponible.notNull).toBe(true)
+    expect(byName['zones_couverture'].notNull).toBe(true)
+  })
+
+  it('offres : colonnes attendues + FK prestataire_id -> prestataires (ON DELETE CASCADE)', () => {
+    const cfg = getTableConfig(offresPg)
+    expect(cfg.name).toBe('offres')
+    expect(columnNames(offresPg)).toEqual([
+      'id', 'prestataire_id', 'categorie', 'titre', 'description', 'prestations',
+      'prix', 'unite_prix', 'delai_heures', 'publie', 'created_at',
+    ])
+    expect(cfg.foreignKeys).toHaveLength(1)
+    expect(cfg.foreignKeys[0].reference().foreignTable).toBe(prestatairesPg)
+  })
+
+  it('promotions : colonnes attendues + FK prestataire_id -> prestataires et offre_id -> offres (nullable)', () => {
+    const cfg = getTableConfig(promotionsPg)
+    expect(cfg.name).toBe('promotions')
+    expect(columnNames(promotionsPg)).toEqual([
+      'id', 'prestataire_id', 'offre_id', 'titre', 'description', 'remise_pct',
+      'debut', 'fin', 'active', 'created_at',
+    ])
+    expect(cfg.foreignKeys).toHaveLength(2)
+    const byName = Object.fromEntries(getTableConfig(promotionsPg).columns.map((c) => [c.name, c]))
+    expect(byName.offre_id.notNull).toBe(false)
+  })
+
+  it('realisations : colonnes attendues + FK prestataire_id -> prestataires, image_url requis', () => {
+    const cfg = getTableConfig(realisationsPg)
+    expect(cfg.name).toBe('realisations')
+    expect(columnNames(realisationsPg)).toEqual([
+      'id', 'prestataire_id', 'titre', 'description', 'image_url', 'created_at',
+    ])
+    expect(cfg.foreignKeys).toHaveLength(1)
+    const byName = Object.fromEntries(getTableConfig(realisationsPg).columns.map((c) => [c.name, c]))
+    expect(byName.image_url.notNull).toBe(true)
+    expect(byName.titre.notNull).toBe(false)
   })
 
   it("prestataires.taux_commission est nullable depuis 0010 (NULL = pas d'override, cf. calculer_commission)", () => {
@@ -143,7 +188,7 @@ describe('Tables marketplace — noms et colonnes', () => {
   it('avis : colonnes attendues (note 1-5 vérifiée en migration SQL)', () => {
     const cfg = getTableConfig(avisPg)
     expect(cfg.name).toBe('avis')
-    expect(columnNames(avisPg)).toEqual(['id', 'matching_id', 'note', 'commentaire', 'created_at'])
+    expect(columnNames(avisPg)).toEqual(['id', 'matching_id', 'note', 'commentaire', 'created_at', 'reponse'])
     expect(cfg.foreignKeys).toHaveLength(1)
     expect(cfg.foreignKeys[0].reference().foreignTable).toBe(matchingsPg)
   })
@@ -548,5 +593,65 @@ describe('Migrations générées', () => {
     // encore calculées (jamais un UPDATE inconditionnel qui écraserait un
     // futur recalcul manuel).
     expect(sql).toMatch(/UPDATE public\.demandes\s*\n\s*SET delai_cible = public\.calculer_delai_cible\(niveau_urgence, created_at, date_souhaitee\)\s*\n\s*WHERE delai_cible IS NULL/)
+  })
+
+  it('0026 bootstrap le profil à l’inscription (auth.users) en rôle apprenant, jamais un rôle staff', () => {
+    const sql = readFileSync(join(drizzleDir, '0026_signup_auth_bootstrap.sql'), 'utf8')
+
+    expect(sql).toMatch(/CREATE OR REPLACE FUNCTION public\.handle_new_user/)
+    expect(sql).toMatch(/AFTER INSERT ON auth\.users/)
+    expect(sql).toMatch(/DROP TRIGGER IF EXISTS on_auth_user_created ON auth\.users/)
+
+    // Insertion idempotente, rôle 'apprenant' codé en dur dans l'INSERT
+    // lui-même (jamais un rôle staff par défaut) — vérifié sur le VALUES
+    // exact plutôt que sur le fichier entier, dont les commentaires citent
+    // légitimement admin/superviseur/operateur pour expliquer pourquoi ils
+    // en sont exclus.
+    const insertMatch = sql.match(/INSERT INTO public\.profiles[\s\S]*?ON CONFLICT \(id\) DO NOTHING;/)
+    expect(insertMatch).not.toBeNull()
+    expect(insertMatch![0]).toMatch(/'apprenant'/)
+    expect(insertMatch![0]).not.toMatch(/'admin'|'superviseur'|'operateur'/)
+  })
+
+  it("0027 crée offres/promotions/realisations et n'essaie pas de rejouer profiles.adresse (déjà ajoutée en 0022)", () => {
+    const sql = readFileSync(join(drizzleDir, '0027_offres_promotions_realisations.sql'), 'utf8')
+    for (const table of ['offres', 'promotions', 'realisations']) {
+      expect(sql).toMatch(new RegExp(`CREATE TABLE IF NOT EXISTS "${table}"`))
+    }
+    expect(sql).toMatch(/ALTER TABLE "prestataires" ADD COLUMN "ville" text;/)
+    expect(sql).toMatch(/ALTER TABLE "prestataires" ADD COLUMN "disponible" boolean DEFAULT true NOT NULL;/)
+    // Drizzle a proposé de rejouer cette colonne (sa propre trace de snapshot
+    // ignore la migration 0022, écrite à la main) — retirée manuellement du
+    // fichier généré car elle casserait sur une base où 0022 est déjà appliquée.
+    expect(sql).not.toMatch(/ALTER TABLE "profiles" ADD COLUMN "adresse"/)
+  })
+
+  it('0028 active RLS sur offres/promotions/realisations, ajoute la contrainte remise_pct et le bucket storage "maideres"', () => {
+    const sql = readFileSync(join(drizzleDir, '0028_offres_promotions_realisations_rls.sql'), 'utf8')
+    for (const table of ['offres', 'promotions', 'realisations']) {
+      expect(sql).toMatch(new RegExp(`ALTER TABLE public\\.${table} ENABLE ROW LEVEL SECURITY`))
+      // Chaque table doit avoir une policy de lecture publique distincte de
+      // celle du staff/propriétaire — c'est ce qui permet à la vitrine
+      // connect de fonctionner sans session utilisateur.
+      expect(sql).toMatch(new RegExp(`CREATE POLICY ${table}_select_public ON public\\.${table}`))
+    }
+    expect(sql).toMatch(/CHECK \(remise_pct > 0 AND remise_pct <= 100\)/)
+    expect(sql).toMatch(/INSERT INTO storage\.buckets \(id, name, public\)\s*\n\s*VALUES \('maideres', 'maideres', true\)\s*\n\s*ON CONFLICT \(id\) DO NOTHING/)
+    // Écriture restreinte au dossier du propriétaire (auth.uid()), jamais un accès storage ouvert.
+    expect(sql).toMatch(/\(storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/)
+  })
+
+  it('0029 ajoute avis.reponse (nullable, colonne unique ajoutée sans recréer la table)', () => {
+    const sql = readFileSync(join(drizzleDir, '0029_avis_reponse.sql'), 'utf8')
+    expect(sql).toMatch(/ALTER TABLE "avis" ADD COLUMN "reponse" text;/)
+    expect(sql).not.toMatch(/NOT NULL/)
+    expect(sql).not.toMatch(/DROP TABLE|CREATE TABLE/i)
+  })
+
+  it('0030 autorise le prestataire concerné (jamais un autre) à modifier son propre avis reçu', () => {
+    const sql = readFileSync(join(drizzleDir, '0030_avis_reponse_rls.sql'), 'utf8')
+    expect(sql).toMatch(/CREATE POLICY avis_update_own_prestataire ON public\.avis/)
+    expect(sql).toMatch(/FOR UPDATE USING/)
+    expect(sql).toMatch(/m\.prestataire_id = public\.own_prestataire_id\(\)/)
   })
 })

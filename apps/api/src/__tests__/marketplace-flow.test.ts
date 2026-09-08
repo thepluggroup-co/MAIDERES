@@ -38,8 +38,8 @@ beforeAll(() => {
   const db = fakeDb()
   db.seed('profiles', [
     { id: ADMIN_ID,       email: 'admin@maideres.cm',  nom: 'Admin',       role: 'admin',      actif: true },
-    { id: CLIENT_USER_ID, email: 'client@maideres.cm', nom: 'Client Test', role: 'technicien',  actif: true },
-    { id: PRESTA_USER_ID, email: 'presta@maideres.cm', nom: 'Presta Test', role: 'technicien',  actif: true },
+    { id: CLIENT_USER_ID, email: 'client@maideres.cm', nom: 'Client Test', role: 'apprenant',  actif: true },
+    { id: PRESTA_USER_ID, email: 'presta@maideres.cm', nom: 'Presta Test', role: 'apprenant',  actif: true },
   ])
   db.seed('categories_services', [{ id: CATEGORIE_ID, libelle: 'Coiffure', actif: true }])
   db.seed('clients', [{ id: CLIENT_ROW_ID, profile_id: CLIENT_USER_ID, nom: 'Client Test', telephone: '+237690000001', quartier: 'Akwa' }])
@@ -85,6 +85,69 @@ describe('RBAC — un client ne peut pas clôturer un matching', () => {
       prestataire_id: PRESTA_ROW_ID,
     })
     expect(res.status).toBe(403)
+  })
+})
+
+describe('Cycle complet demande → matching → avis → réponse prestataire → vitrine publique', () => {
+  it('un client crée une demande, se fait matcher, laisse un avis une fois réalisé ; le prestataire concerné y répond, un autre prestataire ne peut pas', async () => {
+    const demandeRes = await call('POST', '/api/demandes', 'apprenant', CLIENT_USER_ID, {
+      categorie_id: CATEGORIE_ID,
+      description:  "Fuite sous l'évier",
+    })
+    expect(demandeRes.status).toBe(201)
+    const { data: demande } = await demandeRes.json() as { data: { id: string } }
+
+    const matchingRes = await call('POST', '/api/matchings', 'admin', ADMIN_ID, {
+      demande_id: demande.id,
+      prestataire_id: PRESTA_ROW_ID,
+    })
+    expect(matchingRes.status).toBe(201)
+    const { data: matching } = await matchingRes.json() as { data: { id: string } }
+
+    await call('PATCH', `/api/matchings/${matching.id}/accepter`, 'apprenant', PRESTA_USER_ID)
+    const cloturerRes = await call('PATCH', `/api/matchings/${matching.id}/cloturer`, 'apprenant', PRESTA_USER_ID, { issue: 'realise' })
+    expect(cloturerRes.status).toBe(200)
+
+    const avisRes = await call('POST', '/api/avis', 'apprenant', CLIENT_USER_ID, {
+      matching_id: matching.id, note: 5, commentaire: 'Impeccable, je recommande',
+    })
+    expect(avisRes.status).toBe(201)
+    const { data: avis } = await avisRes.json() as { data: { id: string } }
+
+    // Un autre prestataire (n'ayant aucun matching avec cet avis) ne peut pas y répondre.
+    const AUTRE_PRESTA_USER_ID = '99999999-9999-4999-8999-999999999901'
+    const AUTRE_PRESTA_ROW_ID  = '99999999-9999-4999-8999-999999999902'
+    fakeDb().seed('profiles', [
+      { id: AUTRE_PRESTA_USER_ID, email: 'autre@maideres.cm', nom: 'Autre Presta', role: 'apprenant', actif: true },
+    ])
+    fakeDb().seed('prestataires', [{
+      id: AUTRE_PRESTA_ROW_ID, profile_id: AUTRE_PRESTA_USER_ID, nom: 'Autre Presta',
+      telephone: '+237690000098', categories: [], quartier: null, statut: 'actif',
+      note_moyenne: '0', taux_commission: '15',
+    }])
+    const reponseInterditeRes = await call('PATCH', `/api/avis/${avis.id}`, 'apprenant', AUTRE_PRESTA_USER_ID, { reponse: 'Piraté' })
+    expect(reponseInterditeRes.status).toBe(403)
+
+    // Le prestataire concerné répond bien.
+    const reponseRes = await call('PATCH', `/api/avis/${avis.id}`, 'apprenant', PRESTA_USER_ID, { reponse: 'Merci beaucoup !' })
+    expect(reponseRes.status).toBe(200)
+    const { data: avisAvecReponse } = await reponseRes.json() as { data: { reponse: string; note: number; commentaire: string } }
+    expect(avisAvecReponse.reponse).toBe('Merci beaucoup !')
+    // note/commentaire (propriété du client) inchangés par la réponse du prestataire.
+    expect(avisAvecReponse.note).toBe(5)
+    expect(avisAvecReponse.commentaire).toBe('Impeccable, je recommande')
+
+    // La vitrine publique (sans authentification) affiche l'avis + la réponse,
+    // jamais d'information identifiant le client auteur.
+    const publicRes = await app.request(`/api/public/prestataires/${PRESTA_ROW_ID}`)
+    expect(publicRes.status).toBe(200)
+    const { data: fiche } = await publicRes.json() as {
+      data: { avis: Array<{ note: number; commentaire: string; reponse: string; client_id?: string }> }
+    }
+    expect(fiche.avis).toHaveLength(1)
+    expect(fiche.avis[0]!.note).toBe(5)
+    expect(fiche.avis[0]!.reponse).toBe('Merci beaucoup !')
+    expect(fiche.avis[0]!.client_id).toBeUndefined()
   })
 })
 

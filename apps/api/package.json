@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@maideres/ai": "workspace:*",
+    "@maideres/contracts": "workspace:*",
     "@maideres/db": "workspace:*",
     "@maideres/shared": "workspace:*",
     "@hono/node-server": "^1.12.0",

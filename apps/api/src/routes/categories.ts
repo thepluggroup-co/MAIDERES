@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { CreateCategorieServiceSchema, UpdateCategorieServiceSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { isStaff } from '../services/identity.service'
 import { requireRole } from '../middleware/rbac'
@@ -29,12 +29,7 @@ categoriesRouter.get('/', async (c) => {
 })
 
 // ── POST /api/categories_services — admin uniquement (cf. RLS categories_write_admin) ──
-const createSchema = z.object({
-  libelle: z.string().trim().min(1).max(100),
-  actif:   z.boolean().default(true),
-})
-
-categoriesRouter.post('/', requireRole(['admin']), zValidator('json', createSchema), async (c) => {
+categoriesRouter.post('/', requireRole(['admin']), zValidator('json', CreateCategorieServiceSchema), async (c) => {
   const body = c.req.valid('json')
 
   const { data, error } = await db
@@ -48,12 +43,7 @@ categoriesRouter.post('/', requireRole(['admin']), zValidator('json', createSche
 })
 
 // ── PATCH /api/categories_services/:id — admin uniquement ────────────────────
-const updateSchema = z.object({
-  libelle: z.string().trim().min(1).max(100).optional(),
-  actif:   z.boolean().optional(),
-})
-
-categoriesRouter.patch('/:id', requireRole(['admin']), zValidator('json', updateSchema), async (c) => {
+categoriesRouter.patch('/:id', requireRole(['admin']), zValidator('json', UpdateCategorieServiceSchema), async (c) => {
   const id = c.req.param('id')
   const body = c.req.valid('json')
 

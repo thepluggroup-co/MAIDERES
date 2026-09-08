@@ -138,6 +138,19 @@ export const prestatairesPg = pgTable('prestataires', {
   // indistinguable de "override explicite à 0 %").
   tauxCommission:   numeric('taux_commission', { precision: 5, scale: 2 }),
   dateRecrutement:  ts('date_recrutement'),
+  // Colonnes 0027 — profil public self-service (maidere-connect). Distinctes
+  // de `categories` (uuid[] référençant categories_services, utilisé par le
+  // matching/dispatch staff) : `metier` est un libellé libre choisi par le
+  // prestataire pour SA fiche publique, jamais consommé par le matching.
+  // La visibilité publique reste entièrement pilotée par `statut` (jamais
+  // par un champ "publié" auto-déclaré — cf. guard_prestataire_self_update,
+  // 0001, qui bloque déjà toute auto-activation de `statut`) ; `disponible`
+  // est un signal "dispo maintenant" purement informatif, sans effet RLS/API.
+  ville:            text('ville'),
+  metier:           text('metier'),
+  bio:              text('bio'),
+  disponible:       boolean('disponible').notNull().default(true),
+  zonesCouverture:  text('zones_couverture').array().notNull().default(sql`ARRAY[]::text[]`),
 }, (table) => ({
   // GIN : categories est un uuid[] filtré par "contains" (@>) au dispatch —
   // un btree standard ne sait pas indexer un opérateur sur tableau.
@@ -147,6 +160,79 @@ export const prestatairesPg = pgTable('prestataires', {
 
 export type PrestatairePg        = typeof prestatairesPg.$inferSelect
 export type NouveauPrestatairePg = typeof prestatairesPg.$inferInsert
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OFFRES — listing de service self-service (portage maidere-connect, 0027).
+// `categorie` est un libellé libre (pas de FK categories_services) : il
+// s'agit d'une étiquette marketing choisie par le prestataire pour sa
+// fiche publique, distincte de `prestataires.categories` (matching staff).
+// `publie` est un simple interrupteur d'item, sans portée sur la visibilité
+// du prestataire lui-même (gouvernée par prestataires.statut) — un client
+// ne voit jamais les offres d'un prestataire dont statut != 'actif', même
+// si publie=true (cf. filtre appliqué par /api/public/prestataires).
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const offresPg = pgTable('offres', {
+  id:             id(),
+  prestataireId:  uuid('prestataire_id').notNull().references(() => prestatairesPg.id, { onDelete: 'cascade' }),
+  categorie:      text('categorie').notNull(),
+  titre:          text('titre').notNull(),
+  description:    text('description'),
+  prestations:    text('prestations').array().notNull().default(sql`ARRAY[]::text[]`),
+  prix:           integer('prix').notNull(),
+  unitePrix:      text('unite_prix').notNull().default('forfait'),
+  delaiHeures:    integer('delai_heures'),
+  publie:         boolean('publie').notNull().default(true),
+  createdAt:      ts('created_at'),
+}, (table) => ({
+  prestataireIdx: index('offres_prestataire_id_idx').on(table.prestataireId),
+}))
+
+export type OffrePg        = typeof offresPg.$inferSelect
+export type NouvelleOffrePg = typeof offresPg.$inferInsert
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROMOTIONS — remise ponctuelle sur une offre (0027).
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const promotionsPg = pgTable('promotions', {
+  id:             id(),
+  prestataireId:  uuid('prestataire_id').notNull().references(() => prestatairesPg.id, { onDelete: 'cascade' }),
+  offreId:        uuid('offre_id').references(() => offresPg.id, { onDelete: 'set null' }),
+  titre:          text('titre').notNull(),
+  description:    text('description'),
+  // CHECK (0 < remise_pct <= 100) ajoutée en migration SQL — cf. avis.note,
+  // pas de builder `.check()` fiable dans cette version de drizzle-orm.
+  remisePct:      numeric('remise_pct', { precision: 5, scale: 2 }).notNull(),
+  debut:          ts('debut'),
+  fin:            tsN('fin'),
+  active:         boolean('active').notNull().default(true),
+  createdAt:      ts('created_at'),
+}, (table) => ({
+  prestataireIdx: index('promotions_prestataire_id_idx').on(table.prestataireId),
+}))
+
+export type PromotionPg        = typeof promotionsPg.$inferSelect
+export type NouvellePromotionPg = typeof promotionsPg.$inferInsert
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REALISATIONS — galerie photo self-service (0027). `image_url` pointe vers
+// le bucket Storage `maideres` (voir migration RLS/storage associée).
+// ══════════════════════════════════════════════════════════════════════════════
+
+export const realisationsPg = pgTable('realisations', {
+  id:             id(),
+  prestataireId:  uuid('prestataire_id').notNull().references(() => prestatairesPg.id, { onDelete: 'cascade' }),
+  titre:          text('titre'),
+  description:    text('description'),
+  imageUrl:       text('image_url').notNull(),
+  createdAt:      ts('created_at'),
+}, (table) => ({
+  prestataireIdx: index('realisations_prestataire_id_idx').on(table.prestataireId),
+}))
+
+export type RealisationPg        = typeof realisationsPg.$inferSelect
+export type NouvelleRealisationPg = typeof realisationsPg.$inferInsert
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CLIENTS
@@ -311,6 +397,10 @@ export const avisPg = pgTable('avis', {
   note:        integer('note').notNull(),
   commentaire: text('commentaire'),
   createdAt:   ts('created_at'),
+  // Réponse publique du prestataire à l'avis (0029, portage maidere-connect).
+  // Écrite uniquement par le prestataire concerné (via son propre matching)
+  // ou le staff — jamais par le client auteur de l'avis.
+  reponse:     text('reponse'),
 })
 
 export type AvisPg        = typeof avisPg.$inferSelect

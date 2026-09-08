@@ -21,6 +21,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { randomUUID } from 'node:crypto'
 
 const TEST_SUPABASE_URL              = process.env.TEST_SUPABASE_URL
 const TEST_SUPABASE_SERVICE_ROLE_KEY = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY
@@ -77,7 +78,7 @@ describe.skipIf(!CONFIGURED)('calculer_commission — 3 cas de résolution + câ
       profileId = (existingProfile as Row).id as string
     } else {
       const { data, error } = await admin
-        .from('profiles').insert({ email: PRESTA_EMAIL, nom: 'Presta Commission Intégration', role: 'apprenant' })
+        .from('profiles').insert({ id: randomUUID(), email: PRESTA_EMAIL, nom: 'Presta Commission Intégration', role: 'apprenant' })
         .select('id').single()
       if (error) throw error
       profileId = (data as Row).id as string
@@ -107,7 +108,7 @@ describe.skipIf(!CONFIGURED)('calculer_commission — 3 cas de résolution + câ
       .from('profiles').select('id').eq('email', CLIENT_PROFILE_EMAIL).maybeSingle()
     const clientProfileId = existingClientProfile
       ? ((existingClientProfile as Row).id as string)
-      : ((await admin.from('profiles').insert({ email: CLIENT_PROFILE_EMAIL, nom: 'Client Commission Intégration', role: 'apprenant' }).select('id').single()).data as Row).id as string
+      : ((await admin.from('profiles').insert({ id: randomUUID(), email: CLIENT_PROFILE_EMAIL, nom: 'Client Commission Intégration', role: 'apprenant' }).select('id').single()).data as Row).id as string
 
     const { data: existingClient } = await admin
       .from('clients').select('id').eq('profile_id', clientProfileId).maybeSingle()

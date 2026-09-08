@@ -176,6 +176,20 @@
       "when": 1788638400000,
       "tag": "0025_rbac_maideres_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788712862942,
+      "tag": "0027_offres_promotions_realisations",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1788734236004,
+      "tag": "0029_avis_reponse",
+      "breakpoints": true
     }
   ]
 }

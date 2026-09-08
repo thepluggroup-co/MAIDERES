@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { UpdateSlaConfigSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 
@@ -27,15 +27,7 @@ slaConfigRouter.get('/', requireRole([...STAFF]), async (c) => {
 })
 
 // ── PATCH /api/sla_config/:id — staff uniquement ──────────────────────────────
-const updateSchema = z.object({
-  delai_heures:        z.coerce.number().int().positive().optional(),
-  seuil_alerte_heures: z.coerce.number().int().min(0).optional(),
-}).refine(
-  (body) => body.delai_heures === undefined || body.seuil_alerte_heures === undefined || body.seuil_alerte_heures < body.delai_heures,
-  { message: 'seuil_alerte_heures doit être inférieur à delai_heures' },
-)
-
-slaConfigRouter.patch('/:id', requireRole([...STAFF]), zValidator('json', updateSchema), async (c) => {
+slaConfigRouter.patch('/:id', requireRole([...STAFF]), zValidator('json', UpdateSlaConfigSchema), async (c) => {
   const id = c.req.param('id')
   const body = c.req.valid('json')
 

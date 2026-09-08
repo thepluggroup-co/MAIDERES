@@ -22,7 +22,9 @@
       "@maideres/shared": ["./packages/shared/src"],
       "@maideres/shared/*": ["./packages/shared/src/*"],
       "@maideres/ai": ["./packages/ai/src"],
-      "@maideres/ai/*": ["./packages/ai/src/*"]
+      "@maideres/ai/*": ["./packages/ai/src/*"],
+      "@maideres/contracts": ["./packages/contracts/src"],
+      "@maideres/contracts/*": ["./packages/contracts/src/*"]
     }
   },
   "exclude": ["node_modules"]

@@ -1,0 +1,1112 @@
+openapi: 3.0.3
+info:
+  title: MAIDERES API
+  version: 1.0.0
+  description: |
+    API cœur de la marketplace MAIDERES (Cameroun, Douala). Consommée par
+    `apps/web` (console back-office) et `maidere-connect` (vitrine + espaces
+    client/prestataire).
+
+    ## Versioning
+    Toute route est montée deux fois : sans préfixe de version (`/api/...`,
+    conservé pour compatibilité avec les consommateurs existants) et sous
+    `/api/v1/...` (préfixe recommandé pour toute nouvelle intégration). Les
+    deux pointent vers exactement le même code — aucune divergence de
+    comportement aujourd'hui. Un futur `v2` ne casserait que les routes
+    explicitement listées comme changées, jamais silencieusement.
+
+    ## Auth
+    Bearer JWT Supabase (`Authorization: Bearer <access_token>`), sauf le
+    groupe `Public` (aucun token). Le rôle technique (`profiles.role`) ne
+    suffit pas à lui seul : l'identité métier (staff / prestataire / client)
+    est dérivée de l'existence d'une ligne `prestataires`/`clients` liée au
+    profil — voir `GET /profile/me`.
+
+    ## Enveloppe de réponse
+    Succès : `{ "data": ... }` (collections : `{ "data": [...] }`, parfois
+    `meta.page/pageSize/total`). Erreur : `{ "error": "...", "code"?: "..." }`.
+  contact:
+    name: MAIDERES
+externalDocs:
+  description: Contrats de données canoniques (source de vérité des schémas)
+  url: ../../packages/contracts/src
+
+servers:
+  - url: /api/v1
+    description: Préfixe versionné (recommandé)
+  - url: /api
+    description: Alias non versionné (compatibilité)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Public
+    description: Aucune authentification requise — annuaire/vitrine maidere-connect.
+  - name: Profile
+  - name: Categories
+  - name: Prestataires
+  - name: Clients
+  - name: Demandes
+  - name: Matchings
+  - name: Interventions
+  - name: Avis
+  - name: Transactions
+  - name: Reversements
+  - name: SLA Config
+  - name: Commission Config
+  - name: Offres
+  - name: Promotions
+  - name: Realisations
+  - name: Admin
+    description: RBAC / gestion utilisateurs — hors périmètre `@maideres/contracts` (sécurité, pas domaine métier).
+
+paths:
+  # ── Santé ────────────────────────────────────────────────────────────────
+  /health:
+    get:
+      tags: [Public]
+      summary: Liveness (aucune dépendance)
+      security: []
+      responses:
+        '200': { description: OK }
+
+  # ── Public (maidere-connect, sans token) ────────────────────────────────
+  /public/prestataires:
+    get:
+      tags: [Public]
+      summary: Annuaire public des prestataires actifs
+      security: []
+      parameters:
+        - { name: ville, in: query, schema: { type: string } }
+        - { name: quartier, in: query, schema: { type: string } }
+        - { name: categorie, in: query, schema: { type: string }, description: Filtre sur `metier`. }
+        - { name: recherche, in: query, schema: { type: string }, description: Recherche partielle sur `nom` (ILIKE). }
+      responses:
+        '200':
+          description: Jusqu'à 60 résultats, triés note_moyenne desc puis nom.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { $ref: '#/components/schemas/PrestatairePublic' } } }
+  /public/prestataires/{id}:
+    get:
+      tags: [Public]
+      summary: Fiche publique complète (prestataire + offres + promotions + réalisations + avis)
+      security: []
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses:
+        '200':
+          description: '`data: null` si absent ou non actif.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    nullable: true
+                    type: object
+                    properties:
+                      prestataire: { $ref: '#/components/schemas/PrestatairePublic' }
+                      offres: { type: array, items: { $ref: '#/components/schemas/Offre' } }
+                      promotions: { type: array, items: { $ref: '#/components/schemas/Promotion' } }
+                      realisations: { type: array, items: { $ref: '#/components/schemas/Realisation' } }
+                      avis: { type: array, items: { $ref: '#/components/schemas/AvisPublic' } }
+  /public/promotions:
+    get:
+      tags: [Public]
+      summary: Promotions actives, tous prestataires actifs confondus
+      security: []
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 60 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { type: array, items: { $ref: '#/components/schemas/Promotion' } } }
+
+  # ── Profile ──────────────────────────────────────────────────────────────
+  /profile/me:
+    get:
+      tags: [Profile]
+      summary: Profil courant + identité métier dérivée (is_staff / client_id / prestataire_id)
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    patch:
+      tags: [Profile]
+      summary: Mettre à jour son propre profil (nom/téléphone/adresse)
+      requestBody: { $ref: '#/components/requestBodies/UpdateProfile' }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Categories ───────────────────────────────────────────────────────────
+  /categories_services:
+    get:
+      tags: [Categories]
+      summary: Lister — staff&#58; toutes ; sinon&#58; actif=true seulement
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Categories]
+      summary: Créer (admin uniquement)
+      requestBody: { $ref: '#/components/requestBodies/CreateCategorieService' }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /categories_services/{id}:
+    patch:
+      tags: [Categories]
+      summary: Modifier (admin uniquement)
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody: { $ref: '#/components/requestBodies/UpdateCategorieService' }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    delete:
+      tags: [Categories]
+      summary: Supprimer (admin uniquement)
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '204': { description: Supprimé } }
+
+  # ── Prestataires ─────────────────────────────────────────────────────────
+  /prestataires:
+    get:
+      tags: [Prestataires]
+      summary: Lister — client&#58; statut=actif seulement
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Prestataires]
+      summary: Auto-inscription (statut forcé à en_attente côté serveur)
+      requestBody: { $ref: '#/components/requestBodies/CreatePrestataire' }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /prestataires/{id}:
+    get:
+      tags: [Prestataires]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    patch:
+      tags: [Prestataires]
+      summary: Staff&#58; tout. Soi-même&#58; champs non sensibles (taux_commission exclu).
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody: { $ref: '#/components/requestBodies/UpdatePrestataire' }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    delete:
+      tags: [Prestataires]
+      summary: Staff (admin/superviseur/operateur) uniquement
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '204': { description: Supprimé } }
+  /prestataires/{id}/statut:
+    patch:
+      tags: [Prestataires]
+      summary: Valider/suspendre un prestataire (staff)
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdatePrestataireStatutInput' }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Clients ──────────────────────────────────────────────────────────────
+  /clients:
+    get:
+      tags: [Clients]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Clients]
+      summary: Auto-inscription (ou création par staff via profile_id)
+      requestBody: { $ref: '#/components/requestBodies/CreateClient' }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /clients/{id}:
+    get:
+      tags: [Clients]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    patch:
+      tags: [Clients]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody: { $ref: '#/components/requestBodies/UpdateClient' }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    delete:
+      tags: [Clients]
+      summary: Staff (admin/superviseur/operateur) uniquement
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '204': { description: Supprimé } }
+
+  # ── Demandes ─────────────────────────────────────────────────────────────
+  /demandes:
+    get:
+      tags: [Demandes]
+      summary: Lister — client&#58; les siennes ; prestataire&#58; celles matchées avec lui ; staff&#58; toutes
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Demandes]
+      summary: Créer (self-service ou staff pour un client donné, multi-canal)
+      requestBody: { $ref: '#/components/requestBodies/CreateDemande' }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /demandes/{id}:
+    get:
+      tags: [Demandes]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /demandes/{id}/statut:
+    patch:
+      tags: [Demandes]
+      summary: Staff&#58; toute transition valide (voir DEMANDE_STAFF_TRANSITIONS). Client&#58; uniquement nouvelle→annulee.
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UpdateDemandeStatutInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Matchings ────────────────────────────────────────────────────────────
+  /matchings:
+    get:
+      tags: [Matchings]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Matchings]
+      summary: Proposer un prestataire pour une demande (staff uniquement)
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/ProposeMatchingInput' } }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /matchings/{id}:
+    get:
+      tags: [Matchings]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /matchings/{id}/accepter:
+    patch:
+      tags: [Matchings]
+      summary: Le prestataire assigné accepte son propre matching 'propose'
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /matchings/{id}/refuser:
+    patch:
+      tags: [Matchings]
+      summary: Le prestataire assigné refuse son propre matching 'propose'
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/RefuserMatchingInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /matchings/{id}/cloturer:
+    patch:
+      tags: [Matchings]
+      summary: Clôturer réalisé/échoué — staff ou le prestataire assigné, jamais le client
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CloturerMatchingInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Interventions ────────────────────────────────────────────────────────
+  /interventions:
+    get:
+      tags: [Interventions]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+  /interventions/{id}:
+    get:
+      tags: [Interventions]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /interventions/{id}/evenements:
+    get:
+      tags: [Interventions]
+      summary: Journal append-only (alimenté par trigger DB, jamais écrit par l'API)
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+  /interventions/{id}/checkin:
+    patch:
+      tags: [Interventions]
+      summary: Le trigger DB force statut=sur_site et journalise
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CheckinInterventionInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /interventions/{id}/checkout:
+    patch:
+      tags: [Interventions]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /interventions/{id}/statut:
+    patch:
+      tags: [Interventions]
+      summary: Transition manuelle (voir INTERVENTION_TRANSITIONS — realisee/echouee/annulee terminaux)
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UpdateInterventionStatutInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /interventions/{id}/reporter:
+    patch:
+      tags: [Interventions]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/ReporterInterventionInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Avis ─────────────────────────────────────────────────────────────────
+  /avis:
+    get:
+      tags: [Avis]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Avis]
+      summary: Le client laisse un avis sur son propre matching 'realise'
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CreateAvisInput' } }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /avis/{id}:
+    patch:
+      tags: [Avis]
+      summary: Le prestataire concerné (ou staff) répond publiquement — jamais note/commentaire
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UpdateAvisReponseInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Transactions ─────────────────────────────────────────────────────────
+  /transactions/preview-commission:
+    get:
+      tags: [Transactions]
+      summary: Estimation de commission avant création (staff)
+      parameters:
+        - { name: montant_service, in: query, required: true, schema: { type: integer, minimum: 1 } }
+        - { name: categorie_id, in: query, schema: { type: string, format: uuid } }
+        - { name: prestataire_id, in: query, schema: { type: string, format: uuid } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /transactions:
+    get:
+      tags: [Transactions]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Transactions]
+      summary: Staff, uniquement pour un matching 'realise'. commission_taux/montant toujours calculés par trigger.
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CreateTransactionInput' } }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /transactions/{id}:
+    get:
+      tags: [Transactions]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Reversements ─────────────────────────────────────────────────────────
+  /reversements:
+    get:
+      tags: [Reversements]
+      summary: Pas de route de création — amorcés uniquement par trigger DB (0009_intervention_sync.sql)
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+  /reversements/{id}/marquer-paye:
+    patch:
+      tags: [Reversements]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── SLA Config ───────────────────────────────────────────────────────────
+  /sla_config:
+    get:
+      tags: [SLA Config]
+      summary: Staff uniquement
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+  /sla_config/{id}:
+    patch:
+      tags: [SLA Config]
+      summary: Staff uniquement — seuil_alerte_heures doit rester < delai_heures
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UpdateSlaConfigInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+
+  # ── Commission Config ────────────────────────────────────────────────────
+  /commission_config:
+    get:
+      tags: [Commission Config]
+      summary: Staff uniquement (lecture) — categorie_id null = règle globale/fallback
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Commission Config]
+      summary: Admin uniquement
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CreateCommissionConfigInput' } }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /commission_config/{id}:
+    patch:
+      tags: [Commission Config]
+      summary: Admin uniquement
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UpdateCommissionConfigInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    delete:
+      tags: [Commission Config]
+      summary: Admin uniquement
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '204': { description: Supprimé } }
+
+  # ── Offres ───────────────────────────────────────────────────────────────
+  /offres:
+    get:
+      tags: [Offres]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Offres]
+      summary: Self-service (publie=true par défaut, non réglable à la création)
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CreateOffreInput' } }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /offres/{id}:
+    get:
+      tags: [Offres]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    patch:
+      tags: [Offres]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UpdateOffreInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    delete:
+      tags: [Offres]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '204': { description: Supprimé } }
+
+  # ── Promotions ───────────────────────────────────────────────────────────
+  /promotions:
+    get:
+      tags: [Promotions]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Promotions]
+      summary: Self-service. debut = now() par défaut, active toujours true à la création.
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CreatePromotionInput' } }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /promotions/{id}:
+    patch:
+      tags: [Promotions]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      requestBody:
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/UpdatePromotionInput' } }
+      responses: { '200': { $ref: '#/components/responses/One' } }
+    delete:
+      tags: [Promotions]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '204': { description: Supprimé } }
+
+  # ── Realisations ─────────────────────────────────────────────────────────
+  /realisations:
+    get:
+      tags: [Realisations]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+    post:
+      tags: [Realisations]
+      summary: Self-service. image_url pointe vers le bucket Storage `maideres`.
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/CreateRealisationInput' } }
+      responses: { '201': { $ref: '#/components/responses/One' } }
+  /realisations/{id}:
+    delete:
+      tags: [Realisations]
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '204': { description: Supprimé } }
+
+  # ── Admin ────────────────────────────────────────────────────────────────
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Lister les profils (staff)
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+  /admin/users/invite:
+    post:
+      tags: [Admin]
+      summary: Inviter un utilisateur (admin)
+      responses: { '201': { description: Créé } }
+  /admin/users/{id}:
+    patch:
+      tags: [Admin]
+      summary: Modifier un profil (admin)
+      parameters: [{ $ref: '#/components/parameters/PathId' }]
+      responses: { '200': { $ref: '#/components/responses/One' } }
+  /admin/rbac/users:
+    get:
+      tags: [Admin]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+  /admin/rbac/roles:
+    get:
+      tags: [Admin]
+      responses: { '200': { $ref: '#/components/responses/Many' } }
+  /admin/rbac/audit-logs/export:
+    get:
+      tags: [Admin]
+      responses: { '200': { description: Export CSV/JSON } }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Supabase JWT
+
+  parameters:
+    PathId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    One:
+      description: Objet unique
+      content:
+        application/json:
+          schema:
+            type: object
+            properties: { data: {} }
+    Many:
+      description: Collection
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data: { type: array, items: {} }
+              meta:
+                type: object
+                properties: { page: { type: integer }, pageSize: { type: integer }, total: { type: integer } }
+    Error:
+      description: Erreur métier
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiFailure' }
+
+  requestBodies:
+    UpdateProfile:
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/UpdateProfileInput' } }
+    CreateCategorieService:
+      required: true
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/CreateCategorieServiceInput' } }
+    UpdateCategorieService:
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/UpdateCategorieServiceInput' } }
+    CreatePrestataire:
+      required: true
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/CreatePrestataireInput' } }
+    UpdatePrestataire:
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/UpdatePrestataireInput' } }
+    CreateClient:
+      required: true
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/CreateClientInput' } }
+    UpdateClient:
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/UpdateClientInput' } }
+    CreateDemande:
+      required: true
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/CreateDemandeInput' } }
+
+  schemas:
+    # ── Enveloppes ──
+    ApiFailure:
+      type: object
+      properties:
+        error: { type: string }
+        code: { type: string, enum: [AUTH_REQUIRED, FORBIDDEN, VALIDATION_ERROR, RESOURCE_NOT_FOUND, REQUEST_NOT_FOUND, PROVIDER_NOT_FOUND, PROVIDER_NOT_AVAILABLE, INVALID_STATUS_TRANSITION, MATCHING_FAILED, PAYMENT_FAILED, CONFLICT, RATE_LIMITED, INTERNAL_ERROR] }
+        details: {}
+      required: [error]
+
+    # ── Profile ──
+    Profile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        nom: { type: string }
+        role: { type: string, enum: [admin, superviseur, operateur, apprenant] }
+        telephone: { type: string, nullable: true }
+        adresse: { type: string, nullable: true }
+        actif: { type: boolean }
+        created_at: { type: string }
+    MonIdentite:
+      allOf:
+        - $ref: '#/components/schemas/Profile'
+        - type: object
+          properties:
+            is_staff: { type: boolean }
+            client_id: { type: string, format: uuid, nullable: true }
+            prestataire_id: { type: string, format: uuid, nullable: true }
+    UpdateProfileInput:
+      type: object
+      properties:
+        nom: { type: string, maxLength: 100 }
+        telephone: { type: string, nullable: true, maxLength: 30 }
+        adresse: { type: string, nullable: true, maxLength: 200 }
+
+    # ── Categories ──
+    CategorieService:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        libelle: { type: string }
+        actif: { type: boolean }
+    CreateCategorieServiceInput:
+      type: object
+      required: [libelle]
+      properties:
+        libelle: { type: string, minLength: 1, maxLength: 100 }
+        actif: { type: boolean, default: true }
+    UpdateCategorieServiceInput:
+      type: object
+      properties:
+        libelle: { type: string, maxLength: 100 }
+        actif: { type: boolean }
+
+    # ── Prestataires ──
+    Prestataire:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        profile_id: { type: string, format: uuid }
+        nom: { type: string }
+        telephone: { type: string }
+        categories: { type: array, items: { type: string, format: uuid } }
+        quartier: { type: string, nullable: true }
+        geoloc_lat: { type: number, nullable: true }
+        geoloc_lng: { type: number, nullable: true }
+        statut: { $ref: '#/components/schemas/PrestataireStatut' }
+        note_moyenne: { type: string, description: numeric(3,2) sérialisé en string }
+        taux_commission: { type: string, nullable: true }
+        ville: { type: string, nullable: true }
+        metier: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+        disponible: { type: boolean }
+        zones_couverture: { type: array, items: { type: string } }
+    PrestatairePublic:
+      type: object
+      description: Vue exposée à la vitrine — jamais profile_id/geoloc/categories/taux_commission.
+      properties:
+        id: { type: string, format: uuid }
+        nom: { type: string }
+        telephone: { type: string }
+        quartier: { type: string, nullable: true }
+        ville: { type: string, nullable: true }
+        metier: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+        disponible: { type: boolean }
+        zones_couverture: { type: array, items: { type: string } }
+        note_moyenne: { type: string }
+        statut: { $ref: '#/components/schemas/PrestataireStatut' }
+    PrestataireStatut: { type: string, enum: [en_attente, actif, suspendu] }
+    CreatePrestataireInput:
+      type: object
+      required: [nom, telephone]
+      properties:
+        nom: { type: string, minLength: 1, maxLength: 100 }
+        telephone: { type: string, minLength: 6, maxLength: 30 }
+        categories: { type: array, items: { type: string, format: uuid }, default: [] }
+        quartier: { type: string, nullable: true, maxLength: 100 }
+        geoloc_lat: { type: number, minimum: -90, maximum: 90, nullable: true }
+        geoloc_lng: { type: number, minimum: -180, maximum: 180, nullable: true }
+        ville: { type: string, nullable: true, maxLength: 100 }
+        metier: { type: string, nullable: true, maxLength: 100 }
+        bio: { type: string, nullable: true, maxLength: 2000 }
+        zones_couverture: { type: array, items: { type: string, maxLength: 100 } }
+        profile_id: { type: string, format: uuid, description: 'Staff seulement — créer pour un autre profil.' }
+    UpdatePrestataireInput:
+      type: object
+      properties:
+        nom: { type: string, maxLength: 100 }
+        telephone: { type: string, maxLength: 30 }
+        categories: { type: array, items: { type: string, format: uuid } }
+        quartier: { type: string, nullable: true, maxLength: 100 }
+        geoloc_lat: { type: number, nullable: true }
+        geoloc_lng: { type: number, nullable: true }
+        ville: { type: string, nullable: true, maxLength: 100 }
+        metier: { type: string, nullable: true, maxLength: 100 }
+        bio: { type: string, nullable: true, maxLength: 2000 }
+        disponible: { type: boolean }
+        zones_couverture: { type: array, items: { type: string, maxLength: 100 } }
+        taux_commission: { type: number, nullable: true, minimum: 0, maximum: 100, description: 'Staff seulement (vérifié en route). null = retirer l’override.' }
+    UpdatePrestataireStatutInput:
+      type: object
+      required: [statut]
+      properties: { statut: { $ref: '#/components/schemas/PrestataireStatut' } }
+
+    # ── Clients ──
+    Client:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        profile_id: { type: string, format: uuid }
+        nom: { type: string }
+        telephone: { type: string }
+        quartier: { type: string, nullable: true }
+        type_client: { type: string, enum: [particulier, entreprise, organisation] }
+        niu: { type: string, nullable: true }
+        whatsapp: { type: string, nullable: true }
+        email: { type: string, nullable: true }
+        source: { type: string, enum: [whatsapp, appel, ecommerce, referral] }
+    CreateClientInput:
+      type: object
+      required: [nom, telephone]
+      description: 'niu requis si type_client = entreprise|organisation (règle applicative).'
+      properties:
+        nom: { type: string, minLength: 1, maxLength: 100 }
+        telephone: { type: string, minLength: 6, maxLength: 30 }
+        quartier: { type: string, nullable: true, maxLength: 100 }
+        type_client: { type: string, enum: [particulier, entreprise, organisation], default: particulier }
+        niu: { type: string, nullable: true, maxLength: 50 }
+        whatsapp: { type: string, nullable: true, maxLength: 30 }
+        email: { type: string, format: email, nullable: true, maxLength: 150 }
+        source: { type: string, enum: [whatsapp, appel, ecommerce, referral], default: whatsapp }
+        profile_id: { type: string, format: uuid, description: 'Staff seulement.' }
+    UpdateClientInput:
+      type: object
+      properties:
+        nom: { type: string, maxLength: 100 }
+        telephone: { type: string, maxLength: 30 }
+        quartier: { type: string, nullable: true, maxLength: 100 }
+        type_client: { type: string, enum: [particulier, entreprise, organisation] }
+        niu: { type: string, nullable: true, maxLength: 50 }
+        whatsapp: { type: string, nullable: true, maxLength: 30 }
+        email: { type: string, format: email, nullable: true, maxLength: 150 }
+        source: { type: string, enum: [whatsapp, appel, ecommerce, referral] }
+
+    # ── Demandes ──
+    Demande:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        client_id: { type: string, format: uuid }
+        categorie_id: { type: string, format: uuid }
+        description: { type: string }
+        localisation: { type: string, nullable: true }
+        canal: { type: string, enum: [web, whatsapp, manuel] }
+        statut: { type: string, enum: [nouvelle, en_traitement, matchee, realisee, annulee, en_cours] }
+        created_at: { type: string }
+        niveau_urgence: { type: string, enum: [immediate, urgent, planifie] }
+        date_souhaitee: { type: string, nullable: true }
+        delai_cible: { type: string, nullable: true, description: 'Calculé par trigger DB, jamais accepté en entrée.' }
+    CreateDemandeInput:
+      type: object
+      required: [categorie_id, description]
+      description: 'Si niveau_urgence=planifie, date_souhaitee devient requise.'
+      properties:
+        client_id: { type: string, format: uuid, description: 'Staff seulement.' }
+        categorie_id: { type: string, format: uuid }
+        description: { type: string, minLength: 1, maxLength: 2000 }
+        localisation: { type: string, nullable: true, maxLength: 200 }
+        canal: { type: string, enum: [web, whatsapp, manuel], default: web }
+        niveau_urgence: { type: string, enum: [immediate, urgent, planifie], default: urgent }
+        date_souhaitee: { type: string, format: date-time, nullable: true }
+    UpdateDemandeStatutInput:
+      type: object
+      required: [statut]
+      properties: { statut: { type: string, enum: [nouvelle, en_traitement, matchee, realisee, annulee, en_cours] } }
+
+    # ── Matchings ──
+    Matching:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        demande_id: { type: string, format: uuid }
+        prestataire_id: { type: string, format: uuid }
+        operateur_id: { type: string, format: uuid, nullable: true }
+        statut: { type: string, enum: [propose, accepte, refuse, realise, echoue] }
+        motif_echec: { type: string, nullable: true }
+        proposed_at: { type: string }
+        closed_at: { type: string, nullable: true }
+    ProposeMatchingInput:
+      type: object
+      required: [demande_id, prestataire_id]
+      properties:
+        demande_id: { type: string, format: uuid }
+        prestataire_id: { type: string, format: uuid }
+    RefuserMatchingInput:
+      type: object
+      properties: { motif_echec: { type: string, nullable: true, maxLength: 500 } }
+    CloturerMatchingInput:
+      type: object
+      required: [issue]
+      properties:
+        issue: { type: string, enum: [realise, echoue] }
+        motif_echec: { type: string, nullable: true, maxLength: 500 }
+
+    # ── Interventions ──
+    Intervention:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        matching_id: { type: string, format: uuid }
+        statut: { $ref: '#/components/schemas/StatutIntervention' }
+        date_planifiee: { type: string, nullable: true }
+        creneau_fin: { type: string, nullable: true }
+        date_debut: { type: string, nullable: true }
+        date_fin: { type: string, nullable: true }
+        checkin_at: { type: string, nullable: true }
+        checkout_at: { type: string, nullable: true }
+        localisation_checkin: { type: string, nullable: true }
+        preuve: { type: string, nullable: true }
+        created_at: { type: string }
+        updated_at: { type: string }
+    StatutIntervention: { type: string, enum: [planifiee, en_route, sur_site, en_cours, realisee, echouee, reportee, annulee] }
+    InterventionEvenement:
+      type: object
+      description: Journal append-only, alimenté par trigger DB uniquement.
+      properties:
+        id: { type: string, format: uuid }
+        intervention_id: { type: string, format: uuid }
+        type: { type: string, enum: [changement_statut, note, checkin, checkout, retard] }
+        ancien_statut: { $ref: '#/components/schemas/StatutIntervention' }
+        nouveau_statut: { $ref: '#/components/schemas/StatutIntervention' }
+        commentaire: { type: string, nullable: true }
+        localisation: { type: string, nullable: true }
+        operateur_id: { type: string, format: uuid, nullable: true }
+        created_at: { type: string }
+    CheckinInterventionInput:
+      type: object
+      properties: { localisation_checkin: { type: string, nullable: true, maxLength: 200 } }
+    UpdateInterventionStatutInput:
+      type: object
+      required: [statut]
+      properties: { statut: { $ref: '#/components/schemas/StatutIntervention' } }
+    ReporterInterventionInput:
+      type: object
+      required: [date_planifiee]
+      properties:
+        date_planifiee: { type: string, format: date-time }
+        commentaire: { type: string, nullable: true, maxLength: 500 }
+
+    # ── Avis ──
+    Avis:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        matching_id: { type: string, format: uuid }
+        note: { type: integer, minimum: 1, maximum: 5 }
+        commentaire: { type: string, nullable: true }
+        reponse: { type: string, nullable: true }
+        created_at: { type: string }
+    AvisPublic:
+      allOf: [{ $ref: '#/components/schemas/Avis' }]
+      description: Mêmes champs, jamais d'info identifiant le client.
+    CreateAvisInput:
+      type: object
+      required: [matching_id, note]
+      properties:
+        matching_id: { type: string, format: uuid }
+        note: { type: integer, minimum: 1, maximum: 5 }
+        commentaire: { type: string, nullable: true, maxLength: 1000 }
+    UpdateAvisReponseInput:
+      type: object
+      required: [reponse]
+      properties: { reponse: { type: string, nullable: true, maxLength: 1000 } }
+
+    # ── Transactions ──
+    Transaction:
+      type: object
+      description: commission_taux/commission_montant toujours écrasés par trigger, jamais fournis par l'appelant.
+      properties:
+        id: { type: string, format: uuid }
+        matching_id: { type: string, format: uuid }
+        montant_service: { type: integer, description: FCFA, sans sous-unité }
+        commission_taux: { type: string }
+        commission_montant: { type: integer }
+        statut_paiement: { type: string, enum: [en_attente, paye, echoue, rembourse] }
+        ref_notchpay: { type: string, nullable: true }
+        created_at: { type: string }
+    CreateTransactionInput:
+      type: object
+      required: [matching_id, montant_service]
+      properties:
+        matching_id: { type: string, format: uuid }
+        montant_service: { type: integer, minimum: 1 }
+
+    # ── Reversements ──
+    Reversement:
+      type: object
+      description: Pas de schéma de création — amorcé uniquement par trigger DB.
+      properties:
+        id: { type: string, format: uuid }
+        prestataire_id: { type: string, format: uuid }
+        montant: { type: integer }
+        statut: { type: string, enum: [en_attente, traite, echoue] }
+        ref: { type: string, nullable: true }
+        date_paiement: { type: string, nullable: true }
+        created_at: { type: string }
+
+    # ── SLA Config ──
+    SlaConfig:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        niveau_urgence: { type: string, enum: [immediate, urgent, planifie] }
+        delai_heures: { type: integer }
+        seuil_alerte_heures: { type: integer }
+        created_at: { type: string }
+    UpdateSlaConfigInput:
+      type: object
+      description: seuil_alerte_heures doit rester strictement inférieur à delai_heures.
+      properties:
+        delai_heures: { type: integer, minimum: 1 }
+        seuil_alerte_heures: { type: integer, minimum: 0 }
+
+    # ── Commission Config ──
+    CommissionConfig:
+      type: object
+      description: categorie_id null = règle globale (fallback).
+      properties:
+        id: { type: string, format: uuid }
+        categorie_id: { type: string, format: uuid, nullable: true }
+        type: { type: string, enum: [pourcentage, montant_fixe] }
+        valeur: { type: string }
+        actif: { type: boolean }
+        created_at: { type: string }
+    CreateCommissionConfigInput:
+      type: object
+      required: [type, valeur]
+      description: 'valeur ≤ 100 obligatoire si type=pourcentage.'
+      properties:
+        categorie_id: { type: string, format: uuid, nullable: true }
+        type: { type: string, enum: [pourcentage, montant_fixe] }
+        valeur: { type: number, minimum: 0 }
+        actif: { type: boolean, default: true }
+    UpdateCommissionConfigInput:
+      type: object
+      properties:
+        type: { type: string, enum: [pourcentage, montant_fixe] }
+        valeur: { type: number, minimum: 0 }
+        actif: { type: boolean }
+
+    # ── Offres ──
+    Offre:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        prestataire_id: { type: string, format: uuid }
+        categorie: { type: string }
+        titre: { type: string }
+        description: { type: string, nullable: true }
+        prestations: { type: array, items: { type: string } }
+        prix: { type: integer }
+        unite_prix: { type: string }
+        delai_heures: { type: integer, nullable: true }
+        publie: { type: boolean }
+        created_at: { type: string }
+    CreateOffreInput:
+      type: object
+      required: [categorie, titre, prix]
+      properties:
+        categorie: { type: string, minLength: 1, maxLength: 100 }
+        titre: { type: string, minLength: 1, maxLength: 150 }
+        description: { type: string, nullable: true, maxLength: 2000 }
+        prestations: { type: array, items: { type: string, maxLength: 150 }, default: [] }
+        prix: { type: integer, minimum: 0 }
+        unite_prix: { type: string, default: forfait, maxLength: 30 }
+        delai_heures: { type: integer, nullable: true, minimum: 1 }
+        prestataire_id: { type: string, format: uuid, description: 'Staff seulement.' }
+    UpdateOffreInput:
+      type: object
+      properties:
+        categorie: { type: string, maxLength: 100 }
+        titre: { type: string, maxLength: 150 }
+        description: { type: string, nullable: true, maxLength: 2000 }
+        prestations: { type: array, items: { type: string, maxLength: 150 } }
+        prix: { type: integer, minimum: 0 }
+        unite_prix: { type: string, maxLength: 30 }
+        delai_heures: { type: integer, nullable: true, minimum: 1 }
+        publie: { type: boolean }
+
+    # ── Promotions ──
+    Promotion:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        prestataire_id: { type: string, format: uuid }
+        offre_id: { type: string, format: uuid, nullable: true }
+        titre: { type: string }
+        description: { type: string, nullable: true }
+        remise_pct: { type: string }
+        debut: { type: string, nullable: true }
+        fin: { type: string, nullable: true }
+        active: { type: boolean }
+        created_at: { type: string }
+    CreatePromotionInput:
+      type: object
+      required: [titre, remise_pct]
+      description: 'debut = now() par défaut, active toujours true à la création.'
+      properties:
+        offre_id: { type: string, format: uuid, nullable: true }
+        titre: { type: string, minLength: 1, maxLength: 150 }
+        description: { type: string, nullable: true, maxLength: 2000 }
+        remise_pct: { type: number, minimum: 0.01, maximum: 100 }
+        fin: { type: string, format: date-time, nullable: true }
+        prestataire_id: { type: string, format: uuid, description: 'Staff seulement.' }
+    UpdatePromotionInput:
+      type: object
+      properties:
+        titre: { type: string, maxLength: 150 }
+        description: { type: string, nullable: true, maxLength: 2000 }
+        remise_pct: { type: number, minimum: 0.01, maximum: 100 }
+        fin: { type: string, format: date-time, nullable: true }
+        active: { type: boolean }
+
+    # ── Realisations ──
+    Realisation:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        prestataire_id: { type: string, format: uuid }
+        titre: { type: string, nullable: true }
+        description: { type: string, nullable: true }
+        image_url: { type: string }
+        created_at: { type: string }
+    CreateRealisationInput:
+      type: object
+      required: [image_url]
+      description: 'image_url pointe vers le bucket Storage `maideres`.'
+      properties:
+        titre: { type: string, nullable: true, maxLength: 150 }
+        description: { type: string, nullable: true, maxLength: 2000 }
+        image_url: { type: string, minLength: 1, maxLength: 2000 }
+        prestataire_id: { type: string, format: uuid, description: 'Staff seulement.' }
+
+    # ── Notifications (interne, non exposé en écriture) ──
+    NotificationLog:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        cible: { type: string, format: uuid }
+        canal: { type: string, enum: [sms, whatsapp, email] }
+        contenu: { type: string }
+        statut: { type: string, enum: [en_attente, envoye, echoue] }
+        created_at: { type: string }

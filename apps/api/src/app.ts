@@ -19,6 +19,10 @@ import { slaConfigRouter } from './routes/sla-config'
 import { commissionConfigRouter } from './routes/commission-config'
 import { interventionsRouter } from './routes/interventions'
 import { reversementsRouter } from './routes/reversements'
+import { offresRouter } from './routes/offres'
+import { promotionsRouter } from './routes/promotions'
+import { realisationsRouter } from './routes/realisations'
+import { publicRouter } from './routes/public'
 import { HTTPException } from 'hono/http-exception'
 
 const app = new Hono<{ Variables: HonoVariables }>()
@@ -85,6 +89,12 @@ app.get('/health/env', (c) =>
   }),
 )
 
+// Montées AVANT le sous-app `api` (qui porte authMiddleware) : ces routes
+// sont volontairement sans authentification — cf. routes/public.ts pour la
+// justification et le rappel du filtre RLS-équivalent appliqué manuellement.
+app.route('/api/public', publicRouter)
+app.route('/api/v1/public', publicRouter)
+
 const api = new Hono<{ Variables: HonoVariables }>()
 
 api.use('*', authMiddleware)
@@ -103,8 +113,16 @@ api.route('/sla_config',          slaConfigRouter)
 api.route('/commission_config',   commissionConfigRouter)
 api.route('/interventions',       interventionsRouter)
 api.route('/reversements',        reversementsRouter)
+api.route('/offres',              offresRouter)
+api.route('/promotions',          promotionsRouter)
+api.route('/realisations',        realisationsRouter)
 
+// `/api/v1` est un alias du même sous-app `api` — pas de duplication de route,
+// pas de breaking change : `/api/*` (non versionné) continue de fonctionner
+// pour tout consommateur existant (apps/web, maidere-connect) tant qu'il n'a
+// pas migré vers `/api/v1/*`. Voir docs/integration/09-MIGRATION-PLAN.md.
 app.route('/api', api)
+app.route('/api/v1', api)
 
 app.onError((err, c) => {
   // HTTPException : erreurs métier intentionnelles (422, 404, etc.)

@@ -36,7 +36,7 @@ Master-prompt §73 checklist, marked against what has actually been verified —
 - [x] Role authorization verified — both by mocked unit tests (`apps/api`) and live (staff-only matching proposal, prestataire-only accept/reply, client-only review).
 - [~] Service role never exposed — clean in `apps/api`/`apps/web`/`maidere-connect`. `apps/desktop` (frozen) still bakes the service-role key into its Electron bundle at build time — a known, documented pre-release blocker (`08-SECURITY-AUDIT.md`), not touched since it's out of scope while frozen.
 - [x] Secrets absent from repository — the one real-looking placeholder in `.env.example` was replaced; live `.env` files are gitignored in both repos.
-- [~] CORS restricted — dev-mode correctly allows any localhost origin; production origins for the deployed frontends are not yet added to `FRONTEND_URL`.
+- [x] CORS restricted — `maideres-erp.vercel.app` and `maidere-connect.vercel.app` are configured in `FRONTEND_URL`; development still allows localhost origins.
 
 ## Testing
 

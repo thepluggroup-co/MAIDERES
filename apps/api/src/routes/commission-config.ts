@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { CreateCommissionConfigSchema, UpdateCommissionConfigSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 
@@ -31,16 +31,7 @@ commissionConfigRouter.get('/', requireRole(['admin', 'superviseur', 'operateur'
 // ── POST /api/commission_config — admin uniquement (cf. RLS commission_config_write_admin) ──
 // categorie_id absent/null = règle globale (fallback quand aucune règle de
 // catégorie active n'existe) — jamais deux notions distinctes en base.
-const createSchema = z.object({
-  categorie_id: z.string().uuid().nullable().optional(),
-  type:         z.enum(['pourcentage', 'montant_fixe']),
-  valeur:       z.coerce.number().nonnegative(),
-  actif:        z.boolean().default(true),
-}).refine((body) => body.type !== 'pourcentage' || body.valeur <= 100, {
-  message: 'Un taux en pourcentage ne peut pas dépasser 100',
-})
-
-commissionConfigRouter.post('/', requireRole(['admin']), zValidator('json', createSchema), async (c) => {
+commissionConfigRouter.post('/', requireRole(['admin']), zValidator('json', CreateCommissionConfigSchema), async (c) => {
   const body = c.req.valid('json')
 
   const { data, error } = await db
@@ -59,13 +50,7 @@ commissionConfigRouter.post('/', requireRole(['admin']), zValidator('json', crea
 })
 
 // ── PATCH /api/commission_config/:id — admin uniquement ───────────────────────
-const updateSchema = z.object({
-  type:   z.enum(['pourcentage', 'montant_fixe']).optional(),
-  valeur: z.coerce.number().nonnegative().optional(),
-  actif:  z.boolean().optional(),
-})
-
-commissionConfigRouter.patch('/:id', requireRole(['admin']), zValidator('json', updateSchema), async (c) => {
+commissionConfigRouter.patch('/:id', requireRole(['admin']), zValidator('json', UpdateCommissionConfigSchema), async (c) => {
   const id = c.req.param('id')
   const body = c.req.valid('json')
 

@@ -156,18 +156,22 @@ export const authMiddleware: MiddlewareHandler<{ Variables: HonoVariables }> = a
   const email = (payload['email'] as string | undefined) ?? ''
   const appMeta = (payload['app_metadata'] as { role?: string } | undefined) ?? {}
 
-  // Normalize legacy role names (after rename: directeur→admin, apprenant→technicien)
+  // Normalize legacy/alias role names onto the 4 real profiles.role values
+  // (packages/db/src/schema.pg.ts:19). Un app_metadata.role absent ou
+  // inconnu (ex. self-signup via maidere-connect, avant tout appel
+  // supabaseAdmin.auth.admin.updateUserById) retombe sur 'apprenant' — la
+  // même valeur bas-privilège que le bootstrap trigger public.handle_new_user()
+  // (packages/db/drizzle/0026_signup_auth_bootstrap.sql) assigne à
+  // profiles.role, jamais un rôle staff par défaut.
   const ROLE_MAP: Record<string, HonoVariables['user']['role']> = {
     admin:       'admin',
     superviseur: 'superviseur',
     operateur:   'operateur',
-    technicien:  'technicien',
-    livreur:     'livreur',
-    directeur:   'admin',        // legacy
-    apprenant:   'technicien',   // legacy
-    viewer:      'technicien',   // legacy
+    apprenant:   'apprenant',
+    directeur:   'admin',        // legacy alias
+    viewer:      'apprenant',    // legacy alias
   }
-  const role = ROLE_MAP[appMeta.role as string] ?? 'technicien'
+  const role = ROLE_MAP[appMeta.role as string] ?? 'apprenant'
 
   console.log('[auth] ✅', email, '| role:', role, '| jwt_raw:', appMeta.role, '| alg:', alg)
 

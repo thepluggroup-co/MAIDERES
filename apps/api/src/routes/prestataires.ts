@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { CreatePrestataireSchema, UpdatePrestataireSchema, UpdatePrestataireStatutSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff, ownPrestataireId } from '../services/identity.service'
@@ -15,7 +15,7 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 const PRESTATAIRE_FIELDS =
-  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement'
+  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier, bio, disponible, zones_couverture'
 
 // ── GET /api/prestataires — liste, filtrée par rôle ───────────────────────────
 // staff : tout. prestataire : sa propre ligne (tout statut). client : uniquement statut=actif.
@@ -62,17 +62,7 @@ prestatairesRouter.get('/:id', async (c) => {
 })
 
 // ── POST /api/prestataires — inscription (statut toujours en_attente) ────────
-const createSchema = z.object({
-  nom:         z.string().trim().min(1).max(100),
-  telephone:   z.string().trim().min(6).max(30),
-  categories:  z.array(z.string().uuid()).default([]),
-  quartier:    z.string().trim().max(100).nullable().optional(),
-  geoloc_lat:  z.number().min(-90).max(90).nullable().optional(),
-  geoloc_lng:  z.number().min(-180).max(180).nullable().optional(),
-  profile_id:  z.string().uuid().optional(), // staff seulement : créer pour un autre profil
-})
-
-prestatairesRouter.post('/', zValidator('json', createSchema), async (c) => {
+prestatairesRouter.post('/', zValidator('json', CreatePrestataireSchema), async (c) => {
   const user = c.get('user')
   const body = c.req.valid('json')
 
@@ -93,6 +83,10 @@ prestatairesRouter.post('/', zValidator('json', createSchema), async (c) => {
       geoloc_lng:       body.geoloc_lng ?? null,
       statut:           'en_attente',
       date_recrutement: new Date().toISOString(),
+      ville:            body.ville ?? null,
+      metier:           body.metier ?? null,
+      bio:              body.bio ?? null,
+      ...(body.zones_couverture !== undefined ? { zones_couverture: body.zones_couverture } : {}),
     })
     .select(PRESTATAIRE_FIELDS)
     .single()
@@ -107,18 +101,7 @@ async function ownPrestataireIdFor(profileId: string): Promise<string | null> {
 }
 
 // ── PATCH /api/prestataires/:id — staff : tout ; soi-même : champs non sensibles ──
-const updateSchema = z.object({
-  nom:         z.string().trim().min(1).max(100).optional(),
-  telephone:   z.string().trim().min(6).max(30).optional(),
-  categories:  z.array(z.string().uuid()).optional(),
-  quartier:    z.string().trim().max(100).nullable().optional(),
-  geoloc_lat:  z.number().min(-90).max(90).nullable().optional(),
-  geoloc_lng:  z.number().min(-180).max(180).nullable().optional(),
-  // staff seulement. null = retirer l'override (revenir à commission_config).
-  taux_commission: z.number().min(0).max(100).nullable().optional(),
-})
-
-prestatairesRouter.patch('/:id', zValidator('json', updateSchema), async (c) => {
+prestatairesRouter.patch('/:id', zValidator('json', UpdatePrestataireSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const body = c.req.valid('json')
@@ -142,6 +125,11 @@ prestatairesRouter.patch('/:id', zValidator('json', updateSchema), async (c) => 
   if (body.quartier        !== undefined) update.quartier = body.quartier
   if (body.geoloc_lat      !== undefined) update.geoloc_lat = body.geoloc_lat
   if (body.geoloc_lng      !== undefined) update.geoloc_lng = body.geoloc_lng
+  if (body.ville            !== undefined) update.ville = body.ville
+  if (body.metier           !== undefined) update.metier = body.metier
+  if (body.bio              !== undefined) update.bio = body.bio
+  if (body.disponible       !== undefined) update.disponible = body.disponible
+  if (body.zones_couverture !== undefined) update.zones_couverture = body.zones_couverture
   if (staff && body.taux_commission !== undefined) {
     update.taux_commission = body.taux_commission === null ? null : String(body.taux_commission)
   }
@@ -160,12 +148,10 @@ const STATUT_TRANSITIONS: Record<string, string[]> = {
   suspendu:   ['actif'],
 }
 
-const statutSchema = z.object({ statut: z.enum(['en_attente', 'actif', 'suspendu']) })
-
 prestatairesRouter.patch(
   '/:id/statut',
   requireRole(['admin', 'superviseur', 'operateur']),
-  zValidator('json', statutSchema),
+  zValidator('json', UpdatePrestataireStatutSchema),
   async (c) => {
     const id = c.req.param('id')
     const { statut } = c.req.valid('json')

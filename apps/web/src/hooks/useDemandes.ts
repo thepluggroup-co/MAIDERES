@@ -1,26 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
+import type { Demande, DemandeCanal, DemandeStatut, NiveauUrgence } from '@maideres/contracts'
 
-export type DemandeCanal    = 'web' | 'whatsapp' | 'manuel'
-export type DemandeStatut   = 'nouvelle' | 'en_traitement' | 'matchee' | 'realisee' | 'annulee'
-export type NiveauUrgence   = 'immediate' | 'urgent' | 'planifie'
-
-export interface Demande {
-  id:             string
-  client_id:      string
-  categorie_id:   string
-  description:    string
-  localisation:   string | null
-  canal:          DemandeCanal
-  statut:         DemandeStatut
-  created_at:     string
-  niveau_urgence: NiveauUrgence
-  date_souhaitee: string | null
-  // Calculé par trigger DB (niveau_urgence + sla_config, ou date_souhaitee
-  // directement si planifie) — jamais renseigné depuis le front.
-  delai_cible:    string | null
-}
+export type { Demande, DemandeCanal, DemandeStatut, NiveauUrgence }
 
 export interface DemandesFilter {
   statut?:    DemandeStatut

@@ -1,25 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
+import type { Prestataire, PrestataireStatut } from '@maideres/contracts'
 
-export type PrestataireStatut = 'en_attente' | 'actif' | 'suspendu'
-
-export interface Prestataire {
-  id:               string
-  profile_id:       string
-  nom:              string
-  telephone:        string
-  categories:       string[]
-  quartier:         string | null
-  geoloc_lat:       number | null
-  geoloc_lng:       number | null
-  statut:           PrestataireStatut
-  note_moyenne:     string
-  // null = pas d'override, la commission suit commission_config (catégorie
-  // puis règle globale) — voir public.calculer_commission().
-  taux_commission:  string | null
-  date_recrutement: string | null
-}
+export type { Prestataire, PrestataireStatut }
 
 export interface PrestatairesFilter {
   categorie?: string

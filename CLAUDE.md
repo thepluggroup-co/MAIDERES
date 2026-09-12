@@ -9,8 +9,11 @@ humain peut faire le matching manuellement ; la plateforme l'outille et
 l'automatise progressivement.
 
 ## Deux surfaces
-- Vitrine publique + espaces client/prestataire (apps/shop, Next.js).
+- Vitrine publique + espaces client/prestataire (maidere-connect, dépôt séparé, React/Vite).
 - Console 360 back-office pour opérateurs/admin (apps/web, React/Vite).
+
+`apps/shop` (Next.js) a été retiré : superseded par `maidere-connect`,
+voir `docs/integration/09-MIGRATION-PLAN.md`.
 
 ## Socle réutilisé (ex-ERP Tafdil, propriété du fondateur)
 On réutilise l'INFRA, jamais le domaine métier de l'ancien ERP.
@@ -20,7 +23,7 @@ Jeté (Phase 0, complété) : production, machines, paie/RH, stocks, comptabilit
 IoT, sécurité/EPI, equipements, catalogue e-commerce mono-vendeur.
 
 ## Stack
-pnpm 10 + turbo. Node 20+. Supabase/Postgres + Drizzle. apps: api, web, shop.
+pnpm 10 + turbo. Node 20+. Supabase/Postgres + Drizzle. apps: api, web.
 apps/mobile et apps/desktop gelés jusqu'au post-MVP (non touchés, non
 dépendants du domaine métier retiré).
 

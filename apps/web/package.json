@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@maideres/ai": "workspace:*",
+    "@maideres/contracts": "workspace:*",
     "@maideres/shared": "workspace:*",
     "@maideres/ui": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.12",

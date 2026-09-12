@@ -1,22 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
+import type { Client, TypeClient, SourceClient } from '@maideres/contracts'
 
-export type TypeClient   = 'particulier' | 'entreprise' | 'organisation'
-export type SourceClient = 'whatsapp' | 'appel' | 'ecommerce' | 'referral'
-
-export interface Client {
-  id:          string
-  profile_id:  string
-  nom:         string
-  telephone:   string
-  quartier:    string | null
-  type_client: TypeClient
-  niu:         string | null
-  whatsapp:    string | null
-  email:       string | null
-  source:      SourceClient
-}
+export type { Client, TypeClient, SourceClient }
 
 export function useClients(quartier?: string) {
   return useQuery({

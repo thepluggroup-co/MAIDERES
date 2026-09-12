@@ -1,8 +1,11 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import {
+  CheckinInterventionSchema, UpdateInterventionStatutSchema, ReporterInterventionSchema,
+  INTERVENTION_TRANSITIONS, INTERVENTION_TERMINAL_STATUTS,
+} from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
 
@@ -110,9 +113,7 @@ interventionsRouter.get('/:id/evenements', async (c) => {
 // ── PATCH /api/interventions/:id/checkin ──────────────────────────────────────
 // Le trigger DB (0009_intervention_sync.sql) force statut='sur_site' et journalise
 // l'événement 'checkin' automatiquement — l'API se contente d'écrire checkin_at.
-const checkinSchema = z.object({ localisation_checkin: z.string().trim().max(200).nullable().optional() })
-
-interventionsRouter.patch('/:id/checkin', zValidator('json', checkinSchema), async (c) => {
+interventionsRouter.patch('/:id/checkin', zValidator('json', CheckinInterventionSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const body = c.req.valid('json')
@@ -164,23 +165,7 @@ interventionsRouter.patch('/:id/checkout', async (c) => {
 // ── PATCH /api/interventions/:id/statut ────────────────────────────────────────
 // Le trigger journalise le changement + synchronise demandes/reversements ;
 // l'API valide la transition et tient date_debut/date_fin (non gérées par trigger).
-const TRANSITIONS: Record<string, string[]> = {
-  planifiee: ['en_route', 'sur_site', 'reportee', 'annulee'],
-  en_route:  ['sur_site', 'reportee', 'annulee'],
-  sur_site:  ['en_cours', 'reportee', 'annulee'],
-  en_cours:  ['realisee', 'echouee', 'annulee'],
-  reportee:  ['planifiee', 'en_route', 'annulee'],
-  realisee:  [],
-  echouee:   [],
-  annulee:   [],
-}
-const TERMINAUX = ['realisee', 'echouee', 'annulee']
-
-const statutSchema = z.object({
-  statut: z.enum(['planifiee', 'en_route', 'sur_site', 'en_cours', 'realisee', 'echouee', 'reportee', 'annulee']),
-})
-
-interventionsRouter.patch('/:id/statut', zValidator('json', statutSchema), async (c) => {
+interventionsRouter.patch('/:id/statut', zValidator('json', UpdateInterventionStatutSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const { statut } = c.req.valid('json')
@@ -192,13 +177,13 @@ interventionsRouter.patch('/:id/statut', zValidator('json', statutSchema), async
 
   const { write } = await canAccessIntervention(user, current.matching_id)
   if (!write) throw new HTTPException(403, { message: 'Accès refusé' })
-  if (!TRANSITIONS[current.statut]?.includes(statut)) {
+  if (!INTERVENTION_TRANSITIONS[current.statut]?.includes(statut)) {
     throw new HTTPException(422, { message: `Transition ${current.statut} → ${statut} non autorisée` })
   }
 
   const update: Record<string, unknown> = { statut }
   if (statut === 'en_cours' && !current.date_debut) update.date_debut = new Date().toISOString()
-  if (TERMINAUX.includes(statut)) update.date_fin = new Date().toISOString()
+  if (INTERVENTION_TERMINAL_STATUTS.includes(statut)) update.date_fin = new Date().toISOString()
 
   const { data, error } = await db.from('interventions').update(update).eq('id', id).select(INTERVENTION_FIELDS).single()
   if (error) return c.json({ error: error.message }, 500)
@@ -206,12 +191,7 @@ interventionsRouter.patch('/:id/statut', zValidator('json', statutSchema), async
 })
 
 // ── PATCH /api/interventions/:id/reporter — reporte à une nouvelle date ───────
-const reporterSchema = z.object({
-  date_planifiee: z.string().datetime(),
-  commentaire:    z.string().trim().max(500).nullable().optional(),
-})
-
-interventionsRouter.patch('/:id/reporter', zValidator('json', reporterSchema), async (c) => {
+interventionsRouter.patch('/:id/reporter', zValidator('json', ReporterInterventionSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const body = c.req.valid('json')
@@ -223,7 +203,7 @@ interventionsRouter.patch('/:id/reporter', zValidator('json', reporterSchema), a
 
   const { write } = await canAccessIntervention(user, current.matching_id)
   if (!write) throw new HTTPException(403, { message: 'Accès refusé' })
-  if (TERMINAUX.includes(current.statut)) {
+  if (INTERVENTION_TERMINAL_STATUTS.includes(current.statut)) {
     throw new HTTPException(422, { message: 'Impossible de reporter une intervention déjà clôturée' })
   }
 

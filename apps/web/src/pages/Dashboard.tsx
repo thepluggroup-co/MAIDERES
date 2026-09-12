@@ -17,6 +17,7 @@ const STATUTS_DEMANDE: { value: DemandeStatut; label: string; tone: string }[] =
   { value: 'nouvelle',      label: 'Nouvelle',      tone: 'bg-info/12 text-info border-info/30' },
   { value: 'en_traitement', label: 'En traitement', tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
   { value: 'matchee',       label: 'Matchée',       tone: 'bg-primary/10 text-primary border-primary/25' },
+  { value: 'en_cours',      label: 'Intervention en cours', tone: 'bg-primary/10 text-primary border-primary/25' },
   { value: 'realisee',      label: 'Réalisée',      tone: 'bg-success/12 text-success border-success/30' },
   { value: 'annulee',       label: 'Annulée',       tone: 'bg-muted text-muted-foreground border-border' },
 ]

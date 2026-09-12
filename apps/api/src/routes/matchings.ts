@@ -1,11 +1,12 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { ProposeMatchingSchema, RefuserMatchingSchema, CloturerMatchingSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
+import { notifier } from '../services/notification.service'
 
 export const matchingsRouter = new Hono<{ Variables: HonoVariables }>()
 
@@ -78,15 +79,10 @@ async function canAccessMatching(
 }
 
 // ── POST /api/matchings — proposer un prestataire pour une demande (staff) ───
-const proposeSchema = z.object({
-  demande_id:     z.string().uuid(),
-  prestataire_id: z.string().uuid(),
-})
-
 matchingsRouter.post(
   '/',
   requireRole(['admin', 'superviseur', 'operateur']),
-  zValidator('json', proposeSchema),
+  zValidator('json', ProposeMatchingSchema),
   async (c) => {
     const user = c.get('user')
     const body = c.req.valid('json')
@@ -101,10 +97,11 @@ matchingsRouter.post(
     }
 
     const { data: prestataire, error: prestataireError } = await db
-      .from('prestataires').select('id, statut').eq('id', body.prestataire_id).maybeSingle()
+      .from('prestataires').select('id, statut, profile_id, telephone').eq('id', body.prestataire_id).maybeSingle()
     if (prestataireError) return c.json({ error: prestataireError.message }, 500)
     if (!prestataire) throw new HTTPException(404, { message: 'Prestataire introuvable' })
-    if ((prestataire as { statut: string }).statut !== 'actif') {
+    const presta = prestataire as { statut: string; profile_id: string; telephone: string }
+    if (presta.statut !== 'actif') {
       throw new HTTPException(422, { message: 'Le prestataire doit être actif pour recevoir une proposition' })
     }
 
@@ -124,6 +121,12 @@ matchingsRouter.post(
     if (demandeStatut === 'nouvelle') {
       await db.from('demandes').update({ statut: 'en_traitement' }).eq('id', body.demande_id)
     }
+
+    await notifier({
+      profileId: presta.profile_id,
+      telephone: presta.telephone,
+      message:   'MAIDERES : une nouvelle demande vous a été proposée. Connectez-vous pour accepter ou refuser.',
+    })
 
     return c.json({ data }, 201)
   },
@@ -150,13 +153,26 @@ matchingsRouter.patch('/:id/accepter', async (c) => {
 
   await db.from('demandes').update({ statut: 'matchee' }).eq('id', matching.demande_id)
 
+  await notifierClientDeLaDemande(matching.demande_id, 'MAIDERES : un prestataire a accepté votre demande.')
+
   return c.json({ data })
 })
 
-// ── PATCH /api/matchings/:id/refuser — prestataire uniquement, son propre matching ──
-const refuserSchema = z.object({ motif_echec: z.string().trim().max(500).nullable().optional() })
+/** Résout le client propriétaire d'une demande et le notifie — utilitaire partagé entre accepter/cloturer. */
+async function notifierClientDeLaDemande(demandeId: string, message: string): Promise<void> {
+  const { data: demande } = await db.from('demandes').select('client_id').eq('id', demandeId).maybeSingle()
+  const clientId = (demande as { client_id: string } | null)?.client_id
+  if (!clientId) return
 
-matchingsRouter.patch('/:id/refuser', zValidator('json', refuserSchema), async (c) => {
+  const { data: clientRow } = await db.from('clients').select('profile_id, telephone').eq('id', clientId).maybeSingle()
+  const client = clientRow as { profile_id: string; telephone: string } | null
+  if (!client) return
+
+  await notifier({ profileId: client.profile_id, telephone: client.telephone, message })
+}
+
+// ── PATCH /api/matchings/:id/refuser — prestataire uniquement, son propre matching ──
+matchingsRouter.patch('/:id/refuser', zValidator('json', RefuserMatchingSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const { motif_echec } = c.req.valid('json')
@@ -164,10 +180,10 @@ matchingsRouter.patch('/:id/refuser', zValidator('json', refuserSchema), async (
   const prestataireId = await ownPrestataireId(user.id)
   if (!prestataireId) throw new HTTPException(403, { message: 'Réservé aux prestataires' })
 
-  const { data: row, error: findError } = await db.from('matchings').select('prestataire_id, statut').eq('id', id).maybeSingle()
+  const { data: row, error: findError } = await db.from('matchings').select('prestataire_id, statut, operateur_id').eq('id', id).maybeSingle()
   if (findError) return c.json({ error: findError.message }, 500)
   if (!row) throw new HTTPException(404, { message: 'Matching introuvable' })
-  const matching = row as { prestataire_id: string; statut: string }
+  const matching = row as { prestataire_id: string; statut: string; operateur_id: string | null }
 
   if (matching.prestataire_id !== prestataireId) throw new HTTPException(403, { message: 'Accès refusé' })
   if (matching.statut !== 'propose') throw new HTTPException(422, { message: `Impossible de refuser un matching au statut '${matching.statut}'` })
@@ -179,17 +195,22 @@ matchingsRouter.patch('/:id/refuser', zValidator('json', refuserSchema), async (
     .select(MATCHING_FIELDS)
     .single()
   if (error) return c.json({ error: error.message }, 500)
+
+  await notifierOperateur(matching.operateur_id, 'MAIDERES : un prestataire a refusé un matching — la demande doit être re-dispatchée.')
+
   return c.json({ data })
 })
 
+/** Notifie l'opérateur ayant proposé le matching — no-op si operateur_id est absent (matching legacy/orphelin). */
+async function notifierOperateur(operateurId: string | null, message: string): Promise<void> {
+  if (!operateurId) return
+  const { data: profile } = await db.from('profiles').select('telephone').eq('id', operateurId).maybeSingle()
+  await notifier({ profileId: operateurId, telephone: (profile as { telephone: string | null } | null)?.telephone, message })
+}
+
 // ── PATCH /api/matchings/:id/cloturer — staff OU le prestataire assigné ──────
 // Jamais le client (RBAC vérifié en test d'intégration).
-const cloturerSchema = z.object({
-  issue:       z.enum(['realise', 'echoue']),
-  motif_echec: z.string().trim().max(500).nullable().optional(),
-})
-
-matchingsRouter.patch('/:id/cloturer', zValidator('json', cloturerSchema), async (c) => {
+matchingsRouter.patch('/:id/cloturer', zValidator('json', CloturerMatchingSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const { issue, motif_echec } = c.req.valid('json')
@@ -198,10 +219,10 @@ matchingsRouter.patch('/:id/cloturer', zValidator('json', cloturerSchema), async
     throw new HTTPException(422, { message: 'motif_echec requis pour clôturer en échec' })
   }
 
-  const { data: row, error: findError } = await db.from('matchings').select('prestataire_id, demande_id, statut').eq('id', id).maybeSingle()
+  const { data: row, error: findError } = await db.from('matchings').select('prestataire_id, demande_id, statut, operateur_id').eq('id', id).maybeSingle()
   if (findError) return c.json({ error: findError.message }, 500)
   if (!row) throw new HTTPException(404, { message: 'Matching introuvable' })
-  const matching = row as { prestataire_id: string; demande_id: string; statut: string }
+  const matching = row as { prestataire_id: string; demande_id: string; statut: string; operateur_id: string | null }
 
   const staff = isStaff(user.role)
   if (!staff) {
@@ -227,6 +248,12 @@ matchingsRouter.patch('/:id/cloturer', zValidator('json', cloturerSchema), async
     .from('demandes')
     .update({ statut: issue === 'realise' ? 'realisee' : 'en_traitement' })
     .eq('id', matching.demande_id)
+
+  if (issue === 'realise') {
+    await notifierClientDeLaDemande(matching.demande_id, 'MAIDERES : votre intervention est terminée. Laissez un avis sur votre prestataire !')
+  } else {
+    await notifierOperateur(matching.operateur_id, 'MAIDERES : une intervention a échoué — la demande doit être re-dispatchée.')
+  }
 
   return c.json({ data })
 })

@@ -15,7 +15,23 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 const PRESTATAIRE_FIELDS =
-  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier_id, bio, disponible, zones_couverture'
+  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier_id, metier_categorie:categories_services(libelle), bio, disponible, zones_couverture'
+
+// Même aplatissement que côté public (cf. apps/api/src/routes/public.ts) :
+// l'embed Supabase `metier_categorie:categories_services(libelle)` devient
+// un champ scalaire `metier_libelle`, pour rester simple à consommer.
+// Le typage supabase-js générique (aucun type de schéma généré) laisse
+// deviner à TS un tableau pour l'embed alors qu'une FK vers une PK renvoie
+// un objet unique à l'exécution (comportement standard PostgREST) — on
+// accepte donc les deux formes possibles par sécurité.
+type MetierCategorieEmbed = { libelle: string } | { libelle: string }[] | null | undefined
+function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
+  row: T,
+): Omit<T, 'metier_categorie'> & { metier_libelle: string | null } {
+  const { metier_categorie, ...reste } = row
+  const embed = Array.isArray(metier_categorie) ? metier_categorie[0] : metier_categorie
+  return { ...reste, metier_libelle: embed?.libelle ?? null }
+}
 
 // ── GET /api/prestataires — liste, filtrée par rôle ───────────────────────────
 // staff : tout. prestataire : sa propre ligne (tout statut). client : uniquement statut=actif.
@@ -42,7 +58,7 @@ prestatairesRouter.get('/', async (c) => {
 
   const { data, error } = await query.order('nom')
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data })
+  return c.json({ data: (data ?? []).map(aplatirMetier) })
 })
 
 // ── GET /api/prestataires/:id ──────────────────────────────────────────────
@@ -56,7 +72,7 @@ prestatairesRouter.get('/:id', async (c) => {
 
   const row = data as { profile_id: string; statut: string }
   if (isStaff(user.role) || row.profile_id === user.id || row.statut === 'actif') {
-    return c.json({ data })
+    return c.json({ data: aplatirMetier(data) })
   }
   throw new HTTPException(403, { message: 'Accès refusé' })
 })
@@ -92,7 +108,7 @@ prestatairesRouter.post('/', zValidator('json', CreatePrestataireSchema), async 
     .single()
 
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data }, 201)
+  return c.json({ data: aplatirMetier(data) }, 201)
 })
 
 async function ownPrestataireIdFor(profileId: string): Promise<string | null> {
@@ -138,7 +154,7 @@ prestatairesRouter.patch('/:id', zValidator('json', UpdatePrestataireSchema), as
 
   const { data, error } = await db.from('prestataires').update(update).eq('id', id).select(PRESTATAIRE_FIELDS).single()
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data })
+  return c.json({ data: aplatirMetier(data) })
 })
 
 // ── PATCH /api/prestataires/:id/statut — validation de statut (staff) ────────
@@ -167,7 +183,7 @@ prestatairesRouter.patch(
 
     const { data, error } = await db.from('prestataires').update({ statut }).eq('id', id).select(PRESTATAIRE_FIELDS).single()
     if (error) return c.json({ error: error.message }, 500)
-    return c.json({ data })
+    return c.json({ data: aplatirMetier(data) })
   },
 )
 

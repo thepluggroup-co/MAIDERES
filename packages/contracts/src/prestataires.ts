@@ -19,6 +19,8 @@ export const PrestataireSchema = z.object({
   // metier_id (0031) : FK vers categories_services, remplace l'ancien texte libre.
   ville: z.string().nullable().optional(),
   metier_id: z.string().uuid().nullable().optional(),
+  // Dérivé (jamais en entrée) — libellé de categories_services jointe par l'API.
+  metier_libelle: z.string().nullable().optional(),
   bio: z.string().nullable().optional(),
   disponible: z.boolean().optional(),
   zones_couverture: z.array(z.string()).optional(),
@@ -70,6 +72,7 @@ export const PrestatairePublicSchema = z.object({
   quartier: z.string().nullable(),
   ville: z.string().nullable(),
   metier_id: z.string().uuid().nullable(),
+  metier_libelle: z.string().nullable(),
   bio: z.string().nullable(),
   disponible: z.boolean(),
   zones_couverture: z.array(z.string()),

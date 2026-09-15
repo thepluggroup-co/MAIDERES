@@ -31,13 +31,31 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 const PRESTATAIRE_PUBLIC_FIELDS =
-  'id, nom, telephone, quartier, ville, metier_id, bio, disponible, zones_couverture, note_moyenne, statut'
+  'id, nom, telephone, quartier, ville, metier_id, metier_categorie:categories_services(libelle), bio, disponible, zones_couverture, note_moyenne, statut'
 const OFFRE_PUBLIC_FIELDS =
   'id, prestataire_id, categorie, titre, description, prestations, prix, unite_prix, delai_heures'
 const PROMOTION_PUBLIC_FIELDS =
   'id, prestataire_id, offre_id, titre, description, remise_pct, debut, fin'
 const REALISATION_PUBLIC_FIELDS = 'id, prestataire_id, titre, description, image_url'
 const AVIS_PUBLIC_FIELDS = 'id, note, commentaire, reponse, created_at'
+
+// Aplati l'objet imbriqué renvoyé par l'embed Supabase (`metier_categorie:
+// categories_services(libelle)`) en un champ scalaire `metier_libelle`,
+// pour que le contrat public reste simple à consommer côté vitrine
+// (metier_id reste l'UUID utilisable pour filtrer, metier_libelle le texte
+// à afficher).
+// Le typage supabase-js générique (aucun type de schéma généré) laisse
+// deviner à TS un tableau pour l'embed alors qu'une FK vers une PK renvoie
+// un objet unique à l'exécution (comportement standard PostgREST) — on
+// accepte donc les deux formes possibles par sécurité.
+type MetierCategorieEmbed = { libelle: string } | { libelle: string }[] | null | undefined
+function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
+  row: T,
+): Omit<T, 'metier_categorie'> & { metier_libelle: string | null } {
+  const { metier_categorie, ...reste } = row
+  const embed = Array.isArray(metier_categorie) ? metier_categorie[0] : metier_categorie
+  return { ...reste, metier_libelle: embed?.libelle ?? null }
+}
 
 // ── GET /api/public/prestataires — annuaire public, filtres ville/quartier/métier/nom ──
 // NB (0031) : `categorie_id` remplace l'ancien paramètre `categorie` (texte
@@ -55,7 +73,7 @@ publicRouter.get('/prestataires', async (c) => {
 
   const { data, error } = await query.order('note_moyenne', { ascending: false }).order('nom').limit(60)
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data })
+  return c.json({ data: (data ?? []).map(aplatirMetier) })
 })
 
 // ── GET /api/public/prestataires/:id — fiche publique complète ───────────────
@@ -88,13 +106,20 @@ publicRouter.get('/prestataires/:id', async (c) => {
 
   return c.json({
     data: {
-      prestataire,
+      prestataire: aplatirMetier(prestataire),
       offres: offres.data ?? [],
       promotions: promotions.data ?? [],
       realisations: realisations.data ?? [],
       avis,
     },
   })
+})
+
+// ── GET /api/public/categories_services — catégories actives, pour le filtre de recherche public ──
+publicRouter.get('/categories_services', async (c) => {
+  const { data, error } = await db.from('categories_services').select('id, libelle').eq('actif', true).order('libelle')
+  if (error) return c.json({ error: error.message }, 500)
+  return c.json({ data })
 })
 
 // ── GET /api/public/promotions — promotions actives, tous prestataires actifs confondus ──

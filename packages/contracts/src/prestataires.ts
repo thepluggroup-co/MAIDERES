@@ -16,8 +16,9 @@ export const PrestataireSchema = z.object({
   date_recrutement: z.string().nullable().optional(),
   // Colonnes self-service (0027) — profil public maidere-connect, jamais
   // consommées par le matching/dispatch staff (qui reste sur `categories`).
+  // metier_id (0031) : FK vers categories_services, remplace l'ancien texte libre.
   ville: z.string().nullable().optional(),
-  metier: z.string().nullable().optional(),
+  metier_id: z.string().uuid().nullable().optional(),
   bio: z.string().nullable().optional(),
   disponible: z.boolean().optional(),
   zones_couverture: z.array(z.string()).optional(),
@@ -33,7 +34,7 @@ export const CreatePrestataireSchema = z.object({
   geoloc_lat: z.number().min(-90).max(90).nullable().optional(),
   geoloc_lng: z.number().min(-180).max(180).nullable().optional(),
   ville: z.string().trim().max(100).nullable().optional(),
-  metier: z.string().trim().max(100).nullable().optional(),
+  metier_id: z.string().uuid().nullable().optional(),
   bio: z.string().trim().max(2000).nullable().optional(),
   zones_couverture: z.array(z.string().trim().max(100)).optional(),
   profile_id: z.string().uuid().optional(), // staff seulement : créer pour un autre profil
@@ -49,7 +50,7 @@ export const UpdatePrestataireSchema = z.object({
   geoloc_lat: z.number().min(-90).max(90).nullable().optional(),
   geoloc_lng: z.number().min(-180).max(180).nullable().optional(),
   ville: z.string().trim().max(100).nullable().optional(),
-  metier: z.string().trim().max(100).nullable().optional(),
+  metier_id: z.string().uuid().nullable().optional(),
   bio: z.string().trim().max(2000).nullable().optional(),
   disponible: z.boolean().optional(),
   zones_couverture: z.array(z.string().trim().max(100)).optional(),
@@ -68,7 +69,7 @@ export const PrestatairePublicSchema = z.object({
   telephone: z.string(),
   quartier: z.string().nullable(),
   ville: z.string().nullable(),
-  metier: z.string().nullable(),
+  metier_id: z.string().uuid().nullable(),
   bio: z.string().nullable(),
   disponible: z.boolean(),
   zones_couverture: z.array(z.string()),

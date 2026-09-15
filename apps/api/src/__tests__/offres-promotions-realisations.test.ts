@@ -32,6 +32,10 @@ const PRESTA_B_ID       = '55555555-5555-4555-8555-555555555555'
 const PRESTA_SUSPENDU_ID = '66666666-6666-4666-8666-666666666666'
 const CLIENT_USER_ID    = '77777777-7777-4777-8777-777777777777'
 const OFFRE_A_ID        = '88888888-8888-4888-8888-888888888888'
+// metier_id (0031) : FK vers categories_services — ids factices, la table
+// n'a pas besoin d'être seedée ici car FakeSupabase ne vérifie pas les FK.
+const CAT_PLOMBERIE_ID  = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+const CAT_COUTURE_ID    = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
 
 beforeAll(() => {
   const db = fakeDb()
@@ -44,15 +48,15 @@ beforeAll(() => {
   db.seed('prestataires', [
     {
       id: PRESTA_A_ID, profile_id: PRESTA_A_USER_ID, nom: 'Prestataire Actif', telephone: '+237690000001',
-      statut: 'actif', ville: 'Douala', quartier: 'Akwa', metier: 'Plomberie', note_moyenne: '4.5',
+      statut: 'actif', ville: 'Douala', quartier: 'Akwa', metier_id: CAT_PLOMBERIE_ID, note_moyenne: '4.5',
     },
     {
       id: PRESTA_B_ID, profile_id: PRESTA_B_USER_ID, nom: 'Autre Prestataire', telephone: '+237690000002',
-      statut: 'actif', ville: 'Yaoundé', quartier: 'Bastos', metier: 'Couture', note_moyenne: '3.0',
+      statut: 'actif', ville: 'Yaoundé', quartier: 'Bastos', metier_id: CAT_COUTURE_ID, note_moyenne: '3.0',
     },
     {
       id: PRESTA_SUSPENDU_ID, profile_id: '99999999-9999-4999-8999-999999999999', nom: 'Prestataire Suspendu',
-      telephone: '+237690000003', statut: 'suspendu', ville: 'Douala', quartier: 'Akwa', metier: 'Plomberie',
+      telephone: '+237690000003', statut: 'suspendu', ville: 'Douala', quartier: 'Akwa', metier_id: CAT_PLOMBERIE_ID,
     },
   ])
   db.seed('offres', [
@@ -134,8 +138,8 @@ describe('GET /api/public/prestataires — annuaire public, sans authentificatio
     expect(body.data.map((p) => p.id)).toEqual([PRESTA_B_ID])
   })
 
-  it('filtre par métier (categorie)', async () => {
-    const res = await call('GET', '/api/public/prestataires?categorie=Couture')
+  it('filtre par métier (categorie_id)', async () => {
+    const res = await call('GET', `/api/public/prestataires?categorie_id=${CAT_COUTURE_ID}`)
     const body = await res.json() as { data: { id: string }[] }
     expect(body.data.map((p) => p.id)).toEqual([PRESTA_B_ID])
   })

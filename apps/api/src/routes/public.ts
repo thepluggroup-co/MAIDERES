@@ -31,7 +31,7 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 const PRESTATAIRE_PUBLIC_FIELDS =
-  'id, nom, telephone, quartier, ville, metier, bio, disponible, zones_couverture, note_moyenne, statut'
+  'id, nom, telephone, quartier, ville, metier_id, bio, disponible, zones_couverture, note_moyenne, statut'
 const OFFRE_PUBLIC_FIELDS =
   'id, prestataire_id, categorie, titre, description, prestations, prix, unite_prix, delai_heures'
 const PROMOTION_PUBLIC_FIELDS =
@@ -40,13 +40,17 @@ const REALISATION_PUBLIC_FIELDS = 'id, prestataire_id, titre, description, image
 const AVIS_PUBLIC_FIELDS = 'id, note, commentaire, reponse, created_at'
 
 // ── GET /api/public/prestataires — annuaire public, filtres ville/quartier/métier/nom ──
+// NB (0031) : `categorie_id` remplace l'ancien paramètre `categorie` (texte
+// libre) — c'est désormais l'UUID d'une ligne categories_services. Ancien
+// paramètre volontairement non conservé en alias : la vitrine doit être
+// mise à jour de concert (cf. migration 0031).
 publicRouter.get('/prestataires', async (c) => {
-  const { ville, quartier, categorie, recherche } = c.req.query()
+  const { ville, quartier, categorie_id, recherche } = c.req.query()
 
   let query = db.from('prestataires').select(PRESTATAIRE_PUBLIC_FIELDS).eq('statut', 'actif')
   if (ville) query = query.eq('ville', ville)
   if (quartier) query = query.eq('quartier', quartier)
-  if (categorie) query = query.eq('metier', categorie)
+  if (categorie_id) query = query.eq('metier_id', categorie_id)
   if (recherche) query = query.ilike('nom', `%${recherche}%`)
 
   const { data, error } = await query.order('note_moyenne', { ascending: false }).order('nom').limit(60)

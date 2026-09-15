@@ -32,22 +32,24 @@ describe('Tables marketplace — noms et colonnes', () => {
     expect(columnNames(categoriesServicesPg)).toEqual(['id', 'libelle', 'actif'])
   })
 
-  it('prestataires : colonnes attendues + FK profile_id -> profiles', () => {
+  it('prestataires : colonnes attendues + FK profile_id -> profiles, metier_id -> categories_services', () => {
     const cfg = getTableConfig(prestatairesPg)
     expect(cfg.name).toBe('prestataires')
     expect(columnNames(prestatairesPg)).toEqual([
       'id', 'profile_id', 'nom', 'telephone', 'categories', 'quartier',
       'geoloc_lat', 'geoloc_lng', 'statut', 'note_moyenne', 'taux_commission',
-      'date_recrutement', 'ville', 'metier', 'bio', 'disponible', 'zones_couverture',
+      'date_recrutement', 'ville', 'metier_id', 'bio', 'disponible', 'zones_couverture',
     ])
-    expect(cfg.foreignKeys).toHaveLength(1)
-    expect(cfg.foreignKeys[0].reference().foreignTable).toBe(profilesPg)
+    expect(cfg.foreignKeys).toHaveLength(2)
+    const foreignTables = cfg.foreignKeys.map((fk) => fk.reference().foreignTable)
+    expect(foreignTables).toContain(profilesPg)
+    expect(foreignTables).toContain(categoriesServicesPg)
   })
 
-  it("prestataires (0027) : les colonnes self-service (ville/metier/bio/zones_couverture) n'ont pas de valeur par défaut piégeuse — disponible seul a un défaut (true)", () => {
+  it("prestataires (0031) : les colonnes self-service (ville/metier_id/bio/zones_couverture) n'ont pas de valeur par défaut piégeuse — disponible seul a un défaut (true)", () => {
     const byName = Object.fromEntries(getTableConfig(prestatairesPg).columns.map((c) => [c.name, c]))
     expect(byName.ville.notNull).toBe(false)
-    expect(byName.metier.notNull).toBe(false)
+    expect(byName.metier_id.notNull).toBe(false)
     expect(byName.bio.notNull).toBe(false)
     expect(byName.disponible.notNull).toBe(true)
     expect(byName['zones_couverture'].notNull).toBe(true)

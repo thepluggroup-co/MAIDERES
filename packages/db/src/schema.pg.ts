@@ -140,14 +140,18 @@ export const prestatairesPg = pgTable('prestataires', {
   dateRecrutement:  ts('date_recrutement'),
   // Colonnes 0027 — profil public self-service (maidere-connect). Distinctes
   // de `categories` (uuid[] référençant categories_services, utilisé par le
-  // matching/dispatch staff) : `metier` est un libellé libre choisi par le
-  // prestataire pour SA fiche publique, jamais consommé par le matching.
+  // matching/dispatch staff) — ce champ reste dédié à la fiche publique du
+  // prestataire, jamais consommé par le matching.
   // La visibilité publique reste entièrement pilotée par `statut` (jamais
   // par un champ "publié" auto-déclaré — cf. guard_prestataire_self_update,
   // 0001, qui bloque déjà toute auto-activation de `statut`) ; `disponible`
   // est un signal "dispo maintenant" purement informatif, sans effet RLS/API.
   ville:            text('ville'),
-  metier:           text('metier'),
+  // 0031 : `metier` était un libellé texte libre saisi par le prestataire ;
+  // devenu une vraie FK vers categories_services (même modèle que côté
+  // staff), pour fiabiliser le filtre public et éviter la dérive de
+  // libellés (fautes de frappe, doublons "Coiffeur"/"Coiffure"...).
+  metierId:         uuid('metier_id').references(() => categoriesServicesPg.id),
   bio:              text('bio'),
   disponible:       boolean('disponible').notNull().default(true),
   zonesCouverture:  text('zones_couverture').array().notNull().default(sql`ARRAY[]::text[]`),
@@ -156,6 +160,7 @@ export const prestatairesPg = pgTable('prestataires', {
   // un btree standard ne sait pas indexer un opérateur sur tableau.
   categoriesIdx: index('prestataires_categories_gin_idx').using('gin', table.categories),
   quartierIdx:   index('prestataires_quartier_idx').on(table.quartier),
+  metierIdx:     index('prestataires_metier_id_idx').on(table.metierId),
 }))
 
 export type PrestatairePg        = typeof prestatairesPg.$inferSelect

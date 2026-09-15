@@ -15,7 +15,7 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 const PRESTATAIRE_FIELDS =
-  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier, bio, disponible, zones_couverture'
+  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier_id, bio, disponible, zones_couverture'
 
 // ── GET /api/prestataires — liste, filtrée par rôle ───────────────────────────
 // staff : tout. prestataire : sa propre ligne (tout statut). client : uniquement statut=actif.
@@ -84,7 +84,7 @@ prestatairesRouter.post('/', zValidator('json', CreatePrestataireSchema), async 
       statut:           'en_attente',
       date_recrutement: new Date().toISOString(),
       ville:            body.ville ?? null,
-      metier:           body.metier ?? null,
+      metier_id:        body.metier_id ?? null,
       bio:              body.bio ?? null,
       ...(body.zones_couverture !== undefined ? { zones_couverture: body.zones_couverture } : {}),
     })
@@ -126,7 +126,7 @@ prestatairesRouter.patch('/:id', zValidator('json', UpdatePrestataireSchema), as
   if (body.geoloc_lat      !== undefined) update.geoloc_lat = body.geoloc_lat
   if (body.geoloc_lng      !== undefined) update.geoloc_lng = body.geoloc_lng
   if (body.ville            !== undefined) update.ville = body.ville
-  if (body.metier           !== undefined) update.metier = body.metier
+  if (body.metier_id        !== undefined) update.metier_id = body.metier_id
   if (body.bio              !== undefined) update.bio = body.bio
   if (body.disponible       !== undefined) update.disponible = body.disponible
   if (body.zones_couverture !== undefined) update.zones_couverture = body.zones_couverture

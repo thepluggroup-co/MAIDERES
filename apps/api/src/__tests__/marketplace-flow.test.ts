@@ -105,8 +105,25 @@ describe('Cycle complet demande → matching → avis → réponse prestataire �
     const { data: matching } = await matchingRes.json() as { data: { id: string } }
 
     await call('PATCH', `/api/matchings/${matching.id}/accepter`, 'apprenant', PRESTA_USER_ID)
+
+    // L'acceptation doit créer la ligne de suivi terrain correspondante —
+    // sans elle, rien n'est disponible à suivre côté ERP/prestataire/client
+    // (cf. apps/api/src/routes/interventions.ts, en lecture/écriture sur
+    // cette même table).
+    const interventionsRes = await call('GET', `/api/interventions?matching_id=${matching.id}`, 'apprenant', PRESTA_USER_ID)
+    const { data: interventions } = await interventionsRes.json() as { data: { statut: string; matching_id: string }[] }
+    expect(interventions).toHaveLength(1)
+    expect(interventions[0].statut).toBe('planifiee')
+
     const cloturerRes = await call('PATCH', `/api/matchings/${matching.id}/cloturer`, 'apprenant', PRESTA_USER_ID, { issue: 'realise' })
     expect(cloturerRes.status).toBe(200)
+
+    // La clôture du matching doit aussi clore l'intervention liée — sinon le
+    // Kanban ERP la laisserait bloquée sur un statut non terminal pour
+    // toujours (cf. apps/api/src/routes/matchings.ts, PATCH /:id/cloturer).
+    const interventionsApresRes = await call('GET', `/api/interventions?matching_id=${matching.id}`, 'apprenant', PRESTA_USER_ID)
+    const { data: interventionsApres } = await interventionsApresRes.json() as { data: { statut: string }[] }
+    expect(interventionsApres[0].statut).toBe('realisee')
 
     const avisRes = await call('POST', '/api/avis', 'apprenant', CLIENT_USER_ID, {
       matching_id: matching.id, note: 5, commentaire: 'Impeccable, je recommande',

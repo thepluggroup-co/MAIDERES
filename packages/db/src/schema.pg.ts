@@ -281,10 +281,17 @@ export const demandesPg = pgTable('demandes', {
   niveauUrgence: niveauUrgenceEnum('niveau_urgence').notNull().default('urgent'),
   dateSouhaitee: tsN('date_souhaitee'),
   delaiCible:    tsN('delai_cible'),
+  // offreId (0033) : présent quand le client a créé la demande depuis une
+  // offre précise sur la fiche publique d'un prestataire — dans ce cas
+  // l'API crée aussi automatiquement le matching vers ce prestataire (cf.
+  // apps/api/src/routes/demandes.ts, POST /), sans dispatch staff manuel.
+  // Nul pour le parcours générique (le staff choisit le prestataire).
+  offreId:      uuid('offre_id').references(() => offresPg.id, { onDelete: 'set null' }),
 }, (table) => ({
   categorieIdx: index('demandes_categorie_id_idx').on(table.categorieId),
   statutIdx:    index('demandes_statut_idx').on(table.statut),
   delaiCibleIdx: index('demandes_delai_cible_idx').on(table.delaiCible),
+  offreIdx:     index('demandes_offre_id_idx').on(table.offreId),
 }))
 
 export type DemandePg        = typeof demandesPg.$inferSelect

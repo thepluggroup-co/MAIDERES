@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@maideres/db'
 import { CreateDemandeSchema, UpdateDemandeStatutSchema, DEMANDE_STAFF_TRANSITIONS } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
+import { notifier } from '../services/notification.service'
 
 export const demandesRouter = new Hono<{ Variables: HonoVariables }>()
 
@@ -13,7 +14,7 @@ if (!supabaseAdmin) {
 }
 const db = supabaseAdmin!
 
-const DEMANDE_FIELDS = 'id, client_id, categorie_id, description, localisation, canal, statut, created_at, niveau_urgence, date_souhaitee, delai_cible'
+const DEMANDE_FIELDS = 'id, client_id, categorie_id, description, localisation, canal, statut, created_at, niveau_urgence, date_souhaitee, delai_cible, offre_id'
 
 // ── GET /api/demandes — liste, filtrée par rôle ───────────────────────────────
 demandesRouter.get('/', async (c) => {
@@ -102,6 +103,21 @@ demandesRouter.post('/', zValidator('json', CreateDemandeSchema), async (c) => {
     if (!clientId) throw new HTTPException(403, { message: "Aucune fiche client associée à ce compte" })
   }
 
+  // Sélection directe d'une offre (fiche publique d'un prestataire) : la
+  // demande porte la trace de ce choix, et vaut délégation implicite —
+  // proposer directement ce prestataire, sans dispatch staff manuel. Le
+  // prestataire garde la main : il doit toujours accepter ou refuser (cf.
+  // PATCH /api/matchings/:id/accepter), comme pour une proposition classique.
+  let offre: { id: string; prestataire_id: string; publie: boolean } | null = null
+  if (body.offre_id) {
+    const { data: offreRow, error: offreError } = await db
+      .from('offres').select('id, prestataire_id, publie').eq('id', body.offre_id).maybeSingle()
+    if (offreError) return c.json({ error: offreError.message }, 500)
+    if (!offreRow) throw new HTTPException(404, { message: 'Offre introuvable' })
+    offre = offreRow as { id: string; prestataire_id: string; publie: boolean }
+    if (!offre.publie) throw new HTTPException(422, { message: "Cette offre n'est plus publiée" })
+  }
+
   const { data, error } = await db
     .from('demandes')
     .insert({
@@ -113,11 +129,42 @@ demandesRouter.post('/', zValidator('json', CreateDemandeSchema), async (c) => {
       statut:       'nouvelle',
       niveau_urgence: body.niveau_urgence,
       date_souhaitee: body.date_souhaitee ?? null,
+      offre_id:     offre?.id ?? null,
     })
     .select(DEMANDE_FIELDS)
     .single()
 
   if (error) return c.json({ error: error.message }, 500)
+
+  if (offre) {
+    const { data: prestataire, error: prestataireError } = await db
+      .from('prestataires').select('id, statut, profile_id, telephone').eq('id', offre.prestataire_id).maybeSingle()
+    if (prestataireError) return c.json({ error: prestataireError.message }, 500)
+    const presta = prestataire as { id: string; statut: string; profile_id: string; telephone: string } | null
+    if (presta && presta.statut === 'actif') {
+      const demandeId = (data as { id: string }).id
+      const { error: matchingError } = await db.from('matchings').insert({
+        demande_id:     demandeId,
+        prestataire_id: presta.id,
+        operateur_id:   null,
+        statut:         'propose',
+        proposed_at:    new Date().toISOString(),
+      })
+      if (matchingError) return c.json({ error: matchingError.message }, 500)
+
+      await db.from('demandes').update({ statut: 'en_traitement' }).eq('id', demandeId)
+      ;(data as { statut: string }).statut = 'en_traitement'
+
+      await notifier({
+        profileId: presta.profile_id,
+        telephone: presta.telephone,
+        message:   'MAIDERES : une nouvelle demande vous a été proposée. Connectez-vous pour accepter ou refuser.',
+      })
+    }
+    // Prestataire introuvable/inactif : la demande reste 'nouvelle', visible
+    // par le staff pour dispatch manuel classique — jamais bloquante.
+  }
+
   return c.json({ data }, 201)
 })
 

@@ -313,7 +313,7 @@ adminRouter.patch(
       return c.json({ error: 'Vous ne pouvez pas changer votre propre rôle RBAC' }, 400)
     }
 
-    const permCheck = await checkPermission(caller.id, 'ADMIN', 'UPDATE', caller.role)
+    const permCheck = await checkPermission(caller.id, 'UTILISATEURS', 'UPDATE', caller.role)
     if (!permCheck.allowed) return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
 
     // Snapshot avant pour audit
@@ -368,7 +368,7 @@ adminRouter.patch('/rbac/users/:id/deactivate', async (c) => {
   const targetId = c.req.param('id')
   const caller   = c.get('user')
 
-  const permCheck = await checkPermission(caller.id, 'ADMIN', 'UPDATE', caller.role)
+  const permCheck = await checkPermission(caller.id, 'UTILISATEURS', 'UPDATE', caller.role)
   if (!permCheck.allowed) return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
 
   await db
@@ -395,19 +395,9 @@ adminRouter.delete('/rbac/users/:id', async (c) => {
     return c.json({ error: 'Vous ne pouvez pas supprimer votre propre compte' }, 400)
   }
 
-  const permCheck = await checkPermission(caller.id, 'ADMIN', 'DELETE', caller.role)
+  const permCheck = await checkPermission(caller.id, 'UTILISATEURS', 'DELETE', caller.role)
   if (!permCheck.allowed) {
-    // Les règles immuables du RBAC refusent toutes les actions ADMIN:DELETE au niveau global.
-    // Pour la suppression de comptes utilisateurs, on autorise explicitement l'accès aux admins
-    // qui ont déjà un rôle de gestion de l'administration.
-    if (permCheck.reason === 'IMMUTABLE_RULE:ADMIN_DELETE') {
-      const fallbackCheck = await checkPermission(caller.id, 'ADMIN', 'UPDATE', caller.role)
-      if (!fallbackCheck.allowed) {
-        return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
-      }
-    } else {
-      return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
-    }
+    return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
   }
 
   const { error: authError } = await supabaseAdmin!.auth.admin.deleteUser(targetId)
@@ -439,7 +429,7 @@ adminRouter.patch('/rbac/users/:id/reset-password', async (c) => {
   const targetId = c.req.param('id')
   const caller   = c.get('user')
 
-  const permCheck = await checkPermission(caller.id, 'ADMIN', 'UPDATE', caller.role)
+  const permCheck = await checkPermission(caller.id, 'UTILISATEURS', 'UPDATE', caller.role)
   if (!permCheck.allowed) return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
 
   const { data: profile } = await db
@@ -640,7 +630,7 @@ adminRouter.get(
 adminRouter.get('/rbac/audit-logs/export', async (c) => {
   const caller = c.get('user')
 
-  const permCheck = await checkPermission(caller.id, 'ADMIN', 'EXPORT', caller.role)
+  const permCheck = await checkPermission(caller.id, 'AUDIT', 'EXPORT', caller.role)
   if (!permCheck.allowed) return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
 
   const { from, to, actionType, userId: filterUserId } = c.req.query()
@@ -713,7 +703,7 @@ adminRouter.patch(
     const caller = c.get('user')
     const body   = c.req.valid('json')
 
-    const permCheck = await checkPermission(caller.id, 'ADMIN', 'CONFIGURE', caller.role)
+    const permCheck = await checkPermission(caller.id, 'PARAMETRAGE', 'CONFIGURE', caller.role)
     if (!permCheck.allowed) return c.json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403)
 
     const { data: before } = await db

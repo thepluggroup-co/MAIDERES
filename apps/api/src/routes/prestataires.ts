@@ -93,7 +93,13 @@ prestatairesRouter.post('/', zValidator('json', CreatePrestataireSchema), async 
       profile_id:       profileId,
       nom:              body.nom,
       telephone:        body.telephone,
-      categories:       body.categories,
+      // Le métier auto-déclaré (0031) rejoint aussi les catégories de
+      // dispatch staff, pour qu'un prestataire inscrit avec un métier soit
+      // immédiatement matchable dessus — cf. décision du 15/09/2026
+      // (fusion demandée après confusion Console 360 vs Profil PRO).
+      categories:       body.metier_id
+        ? Array.from(new Set([...(body.categories ?? []), body.metier_id]))
+        : (body.categories ?? []),
       quartier:         body.quartier ?? null,
       geoloc_lat:       body.geoloc_lat ?? null,
       geoloc_lng:       body.geoloc_lng ?? null,
@@ -122,7 +128,7 @@ prestatairesRouter.patch('/:id', zValidator('json', UpdatePrestataireSchema), as
   const id = c.req.param('id')
   const body = c.req.valid('json')
 
-  const { data: row, error: findError } = await db.from('prestataires').select('profile_id').eq('id', id).maybeSingle()
+  const { data: row, error: findError } = await db.from('prestataires').select('profile_id, categories').eq('id', id).maybeSingle()
   if (findError) return c.json({ error: findError.message }, 500)
   if (!row) throw new HTTPException(404, { message: 'Prestataire introuvable' })
 
@@ -143,6 +149,14 @@ prestatairesRouter.patch('/:id', zValidator('json', UpdatePrestataireSchema), as
   if (body.geoloc_lng      !== undefined) update.geoloc_lng = body.geoloc_lng
   if (body.ville            !== undefined) update.ville = body.ville
   if (body.metier_id        !== undefined) update.metier_id = body.metier_id
+  // Fusion métier déclaré -> catégories de dispatch (même logique qu'à la
+  // création, cf. POST ci-dessus). N'ajoute jamais depuis `row.categories`
+  // si `update.categories` vient déjà d'être posé ci-dessus par le body —
+  // dans ce cas on fusionne dans CETTE valeur, pas dans l'ancienne de la DB.
+  if (body.metier_id) {
+    const base = (update.categories as string[] | undefined) ?? (row as { categories: string[] }).categories ?? []
+    update.categories = Array.from(new Set([...base, body.metier_id]))
+  }
   if (body.bio              !== undefined) update.bio = body.bio
   if (body.disponible       !== undefined) update.disponible = body.disponible
   if (body.zones_couverture !== undefined) update.zones_couverture = body.zones_couverture

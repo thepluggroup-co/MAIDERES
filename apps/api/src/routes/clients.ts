@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { CreateClientSchema, UpdateClientSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff } from '../services/identity.service'
@@ -54,22 +54,7 @@ clientsRouter.get('/:id', async (c) => {
 })
 
 // ── POST /api/clients — inscription ───────────────────────────────────────────
-const createSchema = z.object({
-  nom:         z.string().trim().min(1).max(100),
-  telephone:   z.string().trim().min(6).max(30),
-  quartier:    z.string().trim().max(100).nullable().optional(),
-  type_client: z.enum(['particulier', 'entreprise', 'organisation']).default('particulier'),
-  niu:         z.string().trim().max(50).nullable().optional(),
-  whatsapp:    z.string().trim().max(30).nullable().optional(),
-  email:       z.string().trim().email().max(150).nullable().optional(),
-  source:      z.enum(['whatsapp', 'appel', 'ecommerce', 'referral']).default('whatsapp'),
-  profile_id:  z.string().uuid().optional(), // staff seulement : créer pour un autre profil
-}).refine(
-  (body) => !requiresNiu(body.type_client) || Boolean(body.niu?.trim()),
-  { message: 'Le NIU est requis pour une entreprise ou une organisation', path: ['niu'] },
-)
-
-clientsRouter.post('/', zValidator('json', createSchema), async (c) => {
+clientsRouter.post('/', zValidator('json', CreateClientSchema), async (c) => {
   const user = c.get('user')
   const body = c.req.valid('json')
   const profileId = isStaff(user.role) && body.profile_id ? body.profile_id : user.id
@@ -98,18 +83,7 @@ clientsRouter.post('/', zValidator('json', createSchema), async (c) => {
 })
 
 // ── PATCH /api/clients/:id — staff ou soi-même ────────────────────────────────
-const updateSchema = z.object({
-  nom:         z.string().trim().min(1).max(100).optional(),
-  telephone:   z.string().trim().min(6).max(30).optional(),
-  quartier:    z.string().trim().max(100).nullable().optional(),
-  type_client: z.enum(['particulier', 'entreprise', 'organisation']).optional(),
-  niu:         z.string().trim().max(50).nullable().optional(),
-  whatsapp:    z.string().trim().max(30).nullable().optional(),
-  email:       z.string().trim().email().max(150).nullable().optional(),
-  source:      z.enum(['whatsapp', 'appel', 'ecommerce', 'referral']).optional(),
-})
-
-clientsRouter.patch('/:id', zValidator('json', updateSchema), async (c) => {
+clientsRouter.patch('/:id', zValidator('json', UpdateClientSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const body = c.req.valid('json')

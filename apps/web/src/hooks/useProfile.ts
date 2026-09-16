@@ -1,17 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
+import type { MonIdentite } from '@maideres/contracts'
 
-export interface ProfileData {
-  id:         string
-  email:      string
-  nom:        string | null
-  role:       string
-  telephone:  string | null
-  adresse:    string | null
-  actif:      boolean
-  created_at: string
-}
+// Alias conservé : GET /api/profile/me renvoie désormais aussi
+// is_staff/client_id/prestataire_id (cf. apps/api/src/routes/profile.ts),
+// disponibles ici pour tout consommateur qui en aurait besoin.
+export type ProfileData = MonIdentite
 
 export function useProfile() {
   const [data, setData]       = useState<ProfileData | null>(null)

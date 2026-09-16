@@ -4,12 +4,16 @@
   "scripts": {
     "dev": "turbo dev --continue",
     "dev:web": "turbo dev --filter=@maideres/api --filter=@maideres/web --continue",
+    "build:api": "pnpm --filter @maideres/api build",
+    "start": "node apps/api/dist/standalone/index.cjs",
     "build": "turbo build",
     "test": "turbo test",
     "lint": "turbo lint",
-    "format": "turbo format"
+    "format": "turbo format",
+    "postman:generate": "node scripts/gen-postman.js"
   },
   "devDependencies": {
+    "js-yaml": "^4.1.1",
     "turbo": "latest",
     "typescript": "^5.4.0"
   },

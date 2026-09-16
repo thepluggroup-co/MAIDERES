@@ -1,12 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
+import type { CategorieService } from '@maideres/contracts'
 
-export interface CategorieService {
-  id:      string
-  libelle: string
-  actif:   boolean
-}
+export type { CategorieService }
 
 export function useCategories() {
   return useQuery({

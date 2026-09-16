@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { supabaseAdmin } from '@maideres/db'
 import type { HonoVariables } from '../types'
+import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
 
 export const profileRouter = new Hono<{ Variables: HonoVariables }>()
 
@@ -12,6 +13,10 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 // ── GET /api/profile/me ───────────────────────────────────────────────────────
+// Inclut l'identité métier dérivée (is_staff/client_id/prestataire_id) en
+// plus du profil brut — un seul appel pour qu'un frontend (apps/web comme
+// maidere-connect) sache de quel côté de la plateforme se trouve
+// l'utilisateur, sans réimplémenter la logique de identity.service.ts.
 profileRouter.get('/me', async (c) => {
   const user = c.get('user')
 
@@ -22,7 +27,20 @@ profileRouter.get('/me', async (c) => {
     .single()
 
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data })
+
+  const staff = isStaff(user.role)
+  const [clientId, prestataireId] = staff
+    ? [null, null]
+    : await Promise.all([ownClientId(user.id), ownPrestataireId(user.id)])
+
+  return c.json({
+    data: {
+      ...data,
+      is_staff: staff,
+      client_id: clientId,
+      prestataire_id: prestataireId,
+    },
+  })
 })
 
 // ── PATCH /api/profile/me ─────────────────────────────────────────────────────

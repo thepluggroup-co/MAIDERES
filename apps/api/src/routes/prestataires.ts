@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { CreatePrestataireSchema, UpdatePrestataireSchema, UpdatePrestataireStatutSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff, ownPrestataireId } from '../services/identity.service'
@@ -15,7 +15,23 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 const PRESTATAIRE_FIELDS =
-  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement'
+  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier_id, metier_categorie:categories_services(libelle), bio, disponible, zones_couverture'
+
+// Même aplatissement que côté public (cf. apps/api/src/routes/public.ts) :
+// l'embed Supabase `metier_categorie:categories_services(libelle)` devient
+// un champ scalaire `metier_libelle`, pour rester simple à consommer.
+// Le typage supabase-js générique (aucun type de schéma généré) laisse
+// deviner à TS un tableau pour l'embed alors qu'une FK vers une PK renvoie
+// un objet unique à l'exécution (comportement standard PostgREST) — on
+// accepte donc les deux formes possibles par sécurité.
+type MetierCategorieEmbed = { libelle: string } | { libelle: string }[] | null | undefined
+function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
+  row: T,
+): Omit<T, 'metier_categorie'> & { metier_libelle: string | null } {
+  const { metier_categorie, ...reste } = row
+  const embed = Array.isArray(metier_categorie) ? metier_categorie[0] : metier_categorie
+  return { ...reste, metier_libelle: embed?.libelle ?? null }
+}
 
 // ── GET /api/prestataires — liste, filtrée par rôle ───────────────────────────
 // staff : tout. prestataire : sa propre ligne (tout statut). client : uniquement statut=actif.
@@ -42,7 +58,7 @@ prestatairesRouter.get('/', async (c) => {
 
   const { data, error } = await query.order('nom')
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data })
+  return c.json({ data: (data ?? []).map(aplatirMetier) })
 })
 
 // ── GET /api/prestataires/:id ──────────────────────────────────────────────
@@ -56,23 +72,13 @@ prestatairesRouter.get('/:id', async (c) => {
 
   const row = data as { profile_id: string; statut: string }
   if (isStaff(user.role) || row.profile_id === user.id || row.statut === 'actif') {
-    return c.json({ data })
+    return c.json({ data: aplatirMetier(data) })
   }
   throw new HTTPException(403, { message: 'Accès refusé' })
 })
 
 // ── POST /api/prestataires — inscription (statut toujours en_attente) ────────
-const createSchema = z.object({
-  nom:         z.string().trim().min(1).max(100),
-  telephone:   z.string().trim().min(6).max(30),
-  categories:  z.array(z.string().uuid()).default([]),
-  quartier:    z.string().trim().max(100).nullable().optional(),
-  geoloc_lat:  z.number().min(-90).max(90).nullable().optional(),
-  geoloc_lng:  z.number().min(-180).max(180).nullable().optional(),
-  profile_id:  z.string().uuid().optional(), // staff seulement : créer pour un autre profil
-})
-
-prestatairesRouter.post('/', zValidator('json', createSchema), async (c) => {
+prestatairesRouter.post('/', zValidator('json', CreatePrestataireSchema), async (c) => {
   const user = c.get('user')
   const body = c.req.valid('json')
 
@@ -87,18 +93,28 @@ prestatairesRouter.post('/', zValidator('json', createSchema), async (c) => {
       profile_id:       profileId,
       nom:              body.nom,
       telephone:        body.telephone,
-      categories:       body.categories,
+      // Le métier auto-déclaré (0031) rejoint aussi les catégories de
+      // dispatch staff, pour qu'un prestataire inscrit avec un métier soit
+      // immédiatement matchable dessus — cf. décision du 15/09/2026
+      // (fusion demandée après confusion Console 360 vs Profil PRO).
+      categories:       body.metier_id
+        ? Array.from(new Set([...(body.categories ?? []), body.metier_id]))
+        : (body.categories ?? []),
       quartier:         body.quartier ?? null,
       geoloc_lat:       body.geoloc_lat ?? null,
       geoloc_lng:       body.geoloc_lng ?? null,
       statut:           'en_attente',
       date_recrutement: new Date().toISOString(),
+      ville:            body.ville ?? null,
+      metier_id:        body.metier_id ?? null,
+      bio:              body.bio ?? null,
+      ...(body.zones_couverture !== undefined ? { zones_couverture: body.zones_couverture } : {}),
     })
     .select(PRESTATAIRE_FIELDS)
     .single()
 
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data }, 201)
+  return c.json({ data: aplatirMetier(data) }, 201)
 })
 
 async function ownPrestataireIdFor(profileId: string): Promise<string | null> {
@@ -107,23 +123,12 @@ async function ownPrestataireIdFor(profileId: string): Promise<string | null> {
 }
 
 // ── PATCH /api/prestataires/:id — staff : tout ; soi-même : champs non sensibles ──
-const updateSchema = z.object({
-  nom:         z.string().trim().min(1).max(100).optional(),
-  telephone:   z.string().trim().min(6).max(30).optional(),
-  categories:  z.array(z.string().uuid()).optional(),
-  quartier:    z.string().trim().max(100).nullable().optional(),
-  geoloc_lat:  z.number().min(-90).max(90).nullable().optional(),
-  geoloc_lng:  z.number().min(-180).max(180).nullable().optional(),
-  // staff seulement. null = retirer l'override (revenir à commission_config).
-  taux_commission: z.number().min(0).max(100).nullable().optional(),
-})
-
-prestatairesRouter.patch('/:id', zValidator('json', updateSchema), async (c) => {
+prestatairesRouter.patch('/:id', zValidator('json', UpdatePrestataireSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const body = c.req.valid('json')
 
-  const { data: row, error: findError } = await db.from('prestataires').select('profile_id').eq('id', id).maybeSingle()
+  const { data: row, error: findError } = await db.from('prestataires').select('profile_id, categories').eq('id', id).maybeSingle()
   if (findError) return c.json({ error: findError.message }, 500)
   if (!row) throw new HTTPException(404, { message: 'Prestataire introuvable' })
 
@@ -142,6 +147,19 @@ prestatairesRouter.patch('/:id', zValidator('json', updateSchema), async (c) => 
   if (body.quartier        !== undefined) update.quartier = body.quartier
   if (body.geoloc_lat      !== undefined) update.geoloc_lat = body.geoloc_lat
   if (body.geoloc_lng      !== undefined) update.geoloc_lng = body.geoloc_lng
+  if (body.ville            !== undefined) update.ville = body.ville
+  if (body.metier_id        !== undefined) update.metier_id = body.metier_id
+  // Fusion métier déclaré -> catégories de dispatch (même logique qu'à la
+  // création, cf. POST ci-dessus). N'ajoute jamais depuis `row.categories`
+  // si `update.categories` vient déjà d'être posé ci-dessus par le body —
+  // dans ce cas on fusionne dans CETTE valeur, pas dans l'ancienne de la DB.
+  if (body.metier_id) {
+    const base = (update.categories as string[] | undefined) ?? (row as { categories: string[] }).categories ?? []
+    update.categories = Array.from(new Set([...base, body.metier_id]))
+  }
+  if (body.bio              !== undefined) update.bio = body.bio
+  if (body.disponible       !== undefined) update.disponible = body.disponible
+  if (body.zones_couverture !== undefined) update.zones_couverture = body.zones_couverture
   if (staff && body.taux_commission !== undefined) {
     update.taux_commission = body.taux_commission === null ? null : String(body.taux_commission)
   }
@@ -150,7 +168,7 @@ prestatairesRouter.patch('/:id', zValidator('json', updateSchema), async (c) => 
 
   const { data, error } = await db.from('prestataires').update(update).eq('id', id).select(PRESTATAIRE_FIELDS).single()
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data })
+  return c.json({ data: aplatirMetier(data) })
 })
 
 // ── PATCH /api/prestataires/:id/statut — validation de statut (staff) ────────
@@ -160,12 +178,10 @@ const STATUT_TRANSITIONS: Record<string, string[]> = {
   suspendu:   ['actif'],
 }
 
-const statutSchema = z.object({ statut: z.enum(['en_attente', 'actif', 'suspendu']) })
-
 prestatairesRouter.patch(
   '/:id/statut',
   requireRole(['admin', 'superviseur', 'operateur']),
-  zValidator('json', statutSchema),
+  zValidator('json', UpdatePrestataireStatutSchema),
   async (c) => {
     const id = c.req.param('id')
     const { statut } = c.req.valid('json')
@@ -181,7 +197,7 @@ prestatairesRouter.patch(
 
     const { data, error } = await db.from('prestataires').update({ statut }).eq('id', id).select(PRESTATAIRE_FIELDS).single()
     if (error) return c.json({ error: error.message }, 500)
-    return c.json({ data })
+    return c.json({ data: aplatirMetier(data) })
   },
 )
 

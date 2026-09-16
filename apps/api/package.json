@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/index.ts",
     "build": "tsup",
-    "start": "node dist/index.js",
+    "start": "node dist/standalone/index.cjs",
     "lint": "eslint src",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@maideres/ai": "workspace:*",
+    "@maideres/contracts": "workspace:*",
     "@maideres/db": "workspace:*",
     "@maideres/shared": "workspace:*",
     "@hono/node-server": "^1.12.0",

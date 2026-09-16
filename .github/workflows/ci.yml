@@ -119,39 +119,3 @@ jobs:
           name: web-dist
           path: apps/web/dist/
           retention-days: 7
-
-  # ── 4. Build Shop (Next.js) ─────────────────────────────────────────────────
-  build-shop:
-    name: Build Shop
-    runs-on: ubuntu-latest
-    needs: lint-and-typecheck
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build shop
-        run: pnpm --filter @maideres/shop build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SITE_URL: https://maideres.vercel.app
-          NEXT_PUBLIC_WHATSAPP_NUMBER: '+237 95884528'
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          NOTCHPAY_PUBLIC_KEY: ${{ secrets.NOTCHPAY_PUBLIC_KEY }}
-          NOTCHPAY_SECRET_KEY: ${{ secrets.NOTCHPAY_SECRET_KEY }}
-          AT_API_KEY: ${{ secrets.AT_API_KEY }}
-          AT_USERNAME: ${{ secrets.AT_USERNAME }}
-          AT_SENDER_ID: AFRICASTALKING

@@ -1,7 +1,7 @@
 export function resolveInviteRedirectUrl(): string | undefined {
   const candidates = [
     process.env.INVITE_REDIRECT_URL,
-    process.env.FRONTEND_URL,
+    process.env.FRONTEND_URL?.split(',')[0],
     process.env.SITE_URL,
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.VITE_APP_URL,

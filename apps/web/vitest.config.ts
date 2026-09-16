@@ -18,10 +18,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@maideres/ui':     path.resolve(__dirname, '../../packages/ui/src/index.ts'),
-      '@maideres/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
-      '@maideres/ai':     path.resolve(__dirname, '../../packages/ai/src/index.ts'),
-      '@maideres/db':     path.resolve(__dirname, '../../packages/db/src/index.ts'),
+      '@maideres/ui':        path.resolve(__dirname, '../../packages/ui/src/index.ts'),
+      '@maideres/shared':    path.resolve(__dirname, '../../packages/shared/src/index.ts'),
+      '@maideres/ai':        path.resolve(__dirname, '../../packages/ai/src/index.ts'),
+      '@maideres/db':        path.resolve(__dirname, '../../packages/db/src/index.ts'),
+      '@maideres/contracts': path.resolve(__dirname, '../../packages/contracts/src/index.ts'),
     },
   },
 })

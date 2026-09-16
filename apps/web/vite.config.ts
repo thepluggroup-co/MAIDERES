@@ -22,6 +22,7 @@ export default defineConfig({
       '@maideres/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
       '@maideres/ai': path.resolve(__dirname, '../../packages/ai/src/index.ts'),
       '@maideres/db': path.resolve(__dirname, '../../packages/db/src/index.ts'),
+      '@maideres/contracts': path.resolve(__dirname, '../../packages/contracts/src/index.ts'),
     },
   },
   optimizeDeps: {

@@ -1,0 +1,1 @@
+ALTER TABLE "avis" ADD COLUMN "reponse" text;

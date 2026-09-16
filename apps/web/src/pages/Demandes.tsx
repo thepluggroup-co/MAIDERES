@@ -16,10 +16,15 @@ import { useCategories } from '@/hooks/useCategories'
 // forme StatusMap de @maideres/ui — ce module reste sur ses propres Chip/ton
 // ci-dessous pour son propre rendu, cf. Clients.tsx/Prestataires.tsx).
 
+// 'en_cours' : jamais posée directement par cette page (voir
+// DEMANDE_STAFF_TRANSITIONS, apps/api/src/routes/demandes.ts) — posée par
+// le trigger sync_intervention_statut (0009) quand l'intervention liée
+// dépasse 'planifiee'. Une demande peut donc légitimement l'afficher ici.
 export const DEMANDE_STATUS_MAP: StatusMap = {
   nouvelle:      { label: 'Nouvelle',      color: '#854F0B', bgColor: '#FAEEDA' },
   en_traitement: { label: 'En traitement', color: '#185FA5', bgColor: '#E6F1FB' },
   matchee:       { label: 'Matchée',       color: '#185FA5', bgColor: '#E6F1FB' },
+  en_cours:      { label: 'Intervention en cours', color: '#185FA5', bgColor: '#E6F1FB' },
   realisee:      { label: 'Réalisée',      color: '#3B6D11', bgColor: '#EAF3DE' },
   annulee:       { label: 'Annulée',       color: '#A32D2D', bgColor: '#FCEBEB' },
 }
@@ -28,6 +33,7 @@ const STATUTS_DEMANDE: { value: DemandeStatut; label: string; tone: string }[] =
   { value: 'nouvelle',      label: 'Nouvelle',      tone: 'bg-info/12 text-info border-info/30' },
   { value: 'en_traitement', label: 'En traitement', tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
   { value: 'matchee',       label: 'Matchée',       tone: 'bg-primary/10 text-primary border-primary/25' },
+  { value: 'en_cours',      label: 'Intervention en cours', tone: 'bg-primary/10 text-primary border-primary/25' },
   { value: 'realisee',      label: 'Réalisée',      tone: 'bg-success/12 text-success border-success/30' },
   { value: 'annulee',       label: 'Annulée',       tone: 'bg-muted text-muted-foreground border-border' },
 ]

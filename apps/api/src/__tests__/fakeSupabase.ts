@@ -92,6 +92,15 @@ export function createFakeSupabase() {
         })
         return builder
       },
+      ilike(col: string, pattern: string) {
+        // Traduit le pattern PostgREST/Supabase ("%texte%") en regex
+        // insensible à la casse — suffisant pour les tests de recherche
+        // par nom (0027, public.ts).
+        const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%/g, '.*')
+        const regex = new RegExp(`^${escaped}$`, 'i')
+        filters.push((row) => typeof row[col] === 'string' && regex.test(row[col] as string))
+        return builder
+      },
       order(_col?: string) { return builder },
       limit(_n?: number) { return builder },
       maybeSingle: async () => {

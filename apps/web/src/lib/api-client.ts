@@ -4,7 +4,7 @@ import { PREVIEW_MODE } from './preview-mode'
 import { mockRequest } from './mock-data'
 
 const _raw = import.meta.env.VITE_API_URL as string | undefined
-export const API_BASE = _raw?.startsWith('http') ? _raw : 'http://localhost:3001'
+export const API_BASE = _raw?.startsWith('http') ? _raw.replace(/\/+$/, '') : 'http://localhost:3001'
 
 const REQUEST_TIMEOUT_MS = 15_000
 

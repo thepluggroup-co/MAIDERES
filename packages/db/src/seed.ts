@@ -24,11 +24,21 @@ const db = supabaseAdmin
 // ── Catégories ─────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
+  // Catégories initiales (Phase 1)
   { id: '157d6b94-5cc4-45bf-a95d-3b60de422e0b', libelle: 'Coiffure',   actif: true },
   { id: 'e76a9fde-c7d2-4281-ba61-ba6b8607e8eb', libelle: 'Taxi',       actif: true },
   { id: '4cdab3d7-b255-4a7d-96c8-dfc40dd286d9', libelle: 'Onglerie',   actif: true },
   { id: '30423365-76c3-4c4d-bdc4-aeade36427cd', libelle: 'Carte SIM',  actif: true },
   { id: 'd3504cfc-a394-44eb-8eb0-09280a79a3b8', libelle: 'Ménage',     actif: true },
+  // 8 nouvelles catégories (extension du catalogue)
+  { id: '2a81d073-2c5c-4552-ad94-efb65125df84', libelle: 'Plomberie',               actif: true },
+  { id: 'e087848e-9c9f-44f0-9709-ca9389004f06', libelle: 'Bricolage et rénovation', actif: true },
+  { id: '2137cb2e-9afe-4f17-b552-3440e34a7fef', libelle: 'Shopping',                actif: true },
+  { id: '613e7e83-b3d7-4a92-bc20-5dcf0855df5a', libelle: 'Restauration',            actif: true },
+  { id: '81fc49e4-2eb5-4ab5-aac5-3ac6106494b4', libelle: 'Hébergement',             actif: true },
+  { id: '850fdc8f-c087-492b-bce6-b93aeff4a74c', libelle: 'Transport',               actif: true },
+  { id: 'a402db16-db85-4459-a025-b4d1579a8d02', libelle: 'Immobilier',              actif: true },
+  { id: '0fb8981b-64b3-4250-8ac5-3dfbfceef2fd', libelle: 'Couture',                 actif: true },
 ]
 
 // ── Prestataires (+ profils associés) ─────────────────────────────────────

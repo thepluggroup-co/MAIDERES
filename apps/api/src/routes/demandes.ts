@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
-import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
+import { CreateDemandeSchema, UpdateDemandeStatutSchema, DEMANDE_STAFF_TRANSITIONS } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
 
@@ -88,20 +88,7 @@ async function canAccessDemande(user: { id: string; role: string }, demande: { c
 // ── POST /api/demandes — création multi-canal ─────────────────────────────────
 // delai_cible n'est jamais accepté ici : calculé par trigger DB à partir de
 // niveau_urgence/date_souhaitee (cf. packages/db/drizzle/0015_demandes_delai_cible_trigger.sql).
-const createSchema = z.object({
-  client_id:      z.string().uuid().optional(), // staff seulement : demande créée pour un client
-  categorie_id:   z.string().uuid(),
-  description:    z.string().trim().min(1).max(2000),
-  localisation:   z.string().trim().max(200).nullable().optional(),
-  canal:          z.enum(['web', 'whatsapp', 'manuel']).default('web'),
-  niveau_urgence: z.enum(['immediate', 'urgent', 'planifie']).default('urgent'),
-  date_souhaitee: z.string().datetime().nullable().optional(),
-}).refine(
-  (body) => body.niveau_urgence !== 'planifie' || Boolean(body.date_souhaitee),
-  { message: 'date_souhaitee est requise pour une demande planifiée', path: ['date_souhaitee'] },
-)
-
-demandesRouter.post('/', zValidator('json', createSchema), async (c) => {
+demandesRouter.post('/', zValidator('json', CreateDemandeSchema), async (c) => {
   const user = c.get('user')
   const body = c.req.valid('json')
 
@@ -136,17 +123,7 @@ demandesRouter.post('/', zValidator('json', createSchema), async (c) => {
 
 // ── PATCH /api/demandes/:id/statut ────────────────────────────────────────────
 // staff : toute transition. client : uniquement annuler sa propre demande 'nouvelle'.
-const STAFF_TRANSITIONS: Record<string, string[]> = {
-  nouvelle:      ['en_traitement', 'annulee'],
-  en_traitement: ['matchee', 'annulee'],
-  matchee:       ['realisee', 'en_traitement', 'annulee'],
-  realisee:      [],
-  annulee:       [],
-}
-
-const statutSchema = z.object({ statut: z.enum(['nouvelle', 'en_traitement', 'matchee', 'realisee', 'annulee']) })
-
-demandesRouter.patch('/:id/statut', zValidator('json', statutSchema), async (c) => {
+demandesRouter.patch('/:id/statut', zValidator('json', UpdateDemandeStatutSchema), async (c) => {
   const user = c.get('user')
   const id = c.req.param('id')
   const { statut } = c.req.valid('json')
@@ -157,7 +134,7 @@ demandesRouter.patch('/:id/statut', zValidator('json', statutSchema), async (c) 
   const current = row as { client_id: string; statut: string }
 
   if (isStaff(user.role)) {
-    if (!STAFF_TRANSITIONS[current.statut]?.includes(statut)) {
+    if (!DEMANDE_STAFF_TRANSITIONS[current.statut]?.includes(statut)) {
       throw new HTTPException(422, { message: `Transition ${current.statut} → ${statut} non autorisée` })
     }
   } else {

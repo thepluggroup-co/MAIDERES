@@ -1,0 +1,1918 @@
+{
+  "info": {
+    "name": "MAIDERES API",
+    "description": "Généré depuis docs/api/openapi.yaml — ne pas éditer les requêtes à la main, régénérer via scripts/gen-postman.js si le spec change.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public",
+      "description": "Aucune authentification requise — annuaire/vitrine maidere-connect.",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Liveness (aucune dépendance)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /public/prestataires",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/public/prestataires?ville=&quartier=&categorie=&recherche=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "public",
+                "prestataires"
+              ],
+              "query": [
+                {
+                  "key": "ville",
+                  "value": "",
+                  "description": "string",
+                  "disabled": true
+                },
+                {
+                  "key": "quartier",
+                  "value": "",
+                  "description": "string",
+                  "disabled": true
+                },
+                {
+                  "key": "categorie",
+                  "value": "",
+                  "description": "string",
+                  "disabled": true
+                },
+                {
+                  "key": "recherche",
+                  "value": "",
+                  "description": "string",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Annuaire public des prestataires actifs"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /public/prestataires/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/public/prestataires/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "public",
+                "prestataires",
+                ":id"
+              ]
+            },
+            "description": "Fiche publique complète (prestataire + offres + promotions + réalisations + avis)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /public/promotions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{base_url}}/public/promotions?limit=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "public",
+                "promotions"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "",
+                  "description": "integer",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Promotions actives, tous prestataires actifs confondus"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /profile/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/profile/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "profile",
+                "me"
+              ]
+            },
+            "description": "Profil courant + identité métier dérivée (is_staff / client_id / prestataire_id)"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /profile/me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/profile/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "profile",
+                "me"
+              ]
+            },
+            "description": "Mettre à jour son propre profil (nom/téléphone/adresse)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"telephone\": \"\",\n  \"adresse\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /categories_services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories_services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories_services"
+              ]
+            },
+            "description": "Lister — staff&#58; toutes ; sinon&#58; actif=true seulement"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /categories_services",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories_services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories_services"
+              ]
+            },
+            "description": "Créer (admin uniquement)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"libelle\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /categories_services/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/categories_services/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories_services",
+                ":id"
+              ]
+            },
+            "description": "Modifier (admin uniquement)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"libelle\": \"\",\n  \"actif\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /categories_services/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories_services/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "categories_services",
+                ":id"
+              ]
+            },
+            "description": "Supprimer (admin uniquement)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Prestataires",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /prestataires",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestataires",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestataires"
+              ]
+            },
+            "description": "Lister — client&#58; statut=actif seulement"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /prestataires",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prestataires",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestataires"
+              ]
+            },
+            "description": "Auto-inscription (statut forcé à en_attente côté serveur)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"telephone\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /prestataires/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestataires/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestataires",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /prestataires/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prestataires/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestataires",
+                ":id"
+              ]
+            },
+            "description": "Staff&#58; tout. Soi-même&#58; champs non sensibles (taux_commission exclu).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"telephone\": \"\",\n  \"categories\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ],\n  \"quartier\": \"\",\n  \"geoloc_lat\": 0,\n  \"geoloc_lng\": 0,\n  \"ville\": \"\",\n  \"metier\": \"\",\n  \"bio\": \"\",\n  \"disponible\": true,\n  \"zones_couverture\": [\n    \"\"\n  ],\n  \"taux_commission\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /prestataires/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestataires/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestataires",
+                ":id"
+              ]
+            },
+            "description": "Staff (admin/superviseur/operateur) uniquement"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /prestataires/{id}/statut",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prestataires/{id}/statut",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestataires",
+                ":id",
+                "statut"
+              ]
+            },
+            "description": "Valider/suspendre un prestataire (staff)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statut\": \"en_attente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /clients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/clients",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST /clients",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            },
+            "description": "Auto-inscription (ou création par staff via profile_id)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"telephone\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /clients/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/clients/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /clients/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clients/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                ":id"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"\",\n  \"telephone\": \"\",\n  \"quartier\": \"\",\n  \"type_client\": \"particulier\",\n  \"niu\": \"\",\n  \"whatsapp\": \"\",\n  \"email\": \"user@example.com\",\n  \"source\": \"whatsapp\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /clients/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/clients/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "clients",
+                ":id"
+              ]
+            },
+            "description": "Staff (admin/superviseur/operateur) uniquement"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Demandes",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /demandes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/demandes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "demandes"
+              ]
+            },
+            "description": "Lister — client&#58; les siennes ; prestataire&#58; celles matchées avec lui ; staff&#58; toutes"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /demandes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/demandes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "demandes"
+              ]
+            },
+            "description": "Créer (self-service ou staff pour un client donné, multi-canal)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categorie_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"description\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /demandes/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/demandes/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "demandes",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /demandes/{id}/statut",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/demandes/{id}/statut",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "demandes",
+                ":id",
+                "statut"
+              ]
+            },
+            "description": "Staff&#58; toute transition valide (voir DEMANDE_STAFF_TRANSITIONS). Client&#58; uniquement nouvelle→annulee.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statut\": \"nouvelle\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Matchings",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /matchings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matchings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "matchings"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST /matchings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/matchings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "matchings"
+              ]
+            },
+            "description": "Proposer un prestataire pour une demande (staff uniquement)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"demande_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"prestataire_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /matchings/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matchings/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "matchings",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /matchings/{id}/accepter",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matchings/{id}/accepter",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "matchings",
+                ":id",
+                "accepter"
+              ]
+            },
+            "description": "Le prestataire assigné accepte son propre matching 'propose'"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /matchings/{id}/refuser",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/matchings/{id}/refuser",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "matchings",
+                ":id",
+                "refuser"
+              ]
+            },
+            "description": "Le prestataire assigné refuse son propre matching 'propose'",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motif_echec\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /matchings/{id}/cloturer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/matchings/{id}/cloturer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "matchings",
+                ":id",
+                "cloturer"
+              ]
+            },
+            "description": "Clôturer réalisé/échoué — staff ou le prestataire assigné, jamais le client",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issue\": \"realise\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Interventions",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /interventions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/interventions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "interventions"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET /interventions/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/interventions/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "interventions",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET /interventions/{id}/evenements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/interventions/{id}/evenements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "interventions",
+                ":id",
+                "evenements"
+              ]
+            },
+            "description": "Journal append-only (alimenté par trigger DB, jamais écrit par l'API)"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /interventions/{id}/checkin",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/interventions/{id}/checkin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "interventions",
+                ":id",
+                "checkin"
+              ]
+            },
+            "description": "Le trigger DB force statut=sur_site et journalise",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"localisation_checkin\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /interventions/{id}/checkout",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/interventions/{id}/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "interventions",
+                ":id",
+                "checkout"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /interventions/{id}/statut",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/interventions/{id}/statut",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "interventions",
+                ":id",
+                "statut"
+              ]
+            },
+            "description": "Transition manuelle (voir INTERVENTION_TRANSITIONS — realisee/echouee/annulee terminaux)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"statut\": \"planifiee\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /interventions/{id}/reporter",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/interventions/{id}/reporter",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "interventions",
+                ":id",
+                "reporter"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date_planifiee\": \"2026-01-01T00:00:00.000Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Avis",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /avis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/avis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "avis"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST /avis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/avis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "avis"
+              ]
+            },
+            "description": "Le client laisse un avis sur son propre matching 'realise'",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matching_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"note\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /avis/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/avis/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "avis",
+                ":id"
+              ]
+            },
+            "description": "Le prestataire concerné (ou staff) répond publiquement — jamais note/commentaire",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reponse\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /transactions/preview-commission",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transactions/preview-commission?montant_service=&categorie_id=&prestataire_id=",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions",
+                "preview-commission"
+              ],
+              "query": [
+                {
+                  "key": "montant_service",
+                  "value": "",
+                  "description": "integer",
+                  "disabled": false
+                },
+                {
+                  "key": "categorie_id",
+                  "value": "",
+                  "description": "string",
+                  "disabled": true
+                },
+                {
+                  "key": "prestataire_id",
+                  "value": "",
+                  "description": "string",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Estimation de commission avant création (staff)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST /transactions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions"
+              ]
+            },
+            "description": "Staff, uniquement pour un matching 'realise'. commission_taux/montant toujours calculés par trigger.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matching_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"montant_service\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /transactions/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transactions/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transactions",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reversements",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /reversements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reversements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reversements"
+              ]
+            },
+            "description": "Pas de route de création — amorcés uniquement par trigger DB (0009_intervention_sync.sql)"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /reversements/{id}/marquer-paye",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reversements/{id}/marquer-paye",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reversements",
+                ":id",
+                "marquer-paye"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SLA Config",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /sla_config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/sla_config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sla_config"
+              ]
+            },
+            "description": "Staff uniquement"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /sla_config/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sla_config/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sla_config",
+                ":id"
+              ]
+            },
+            "description": "Staff uniquement — seuil_alerte_heures doit rester < delai_heures",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delai_heures\": 0,\n  \"seuil_alerte_heures\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Commission Config",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /commission_config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/commission_config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "commission_config"
+              ]
+            },
+            "description": "Staff uniquement (lecture) — categorie_id null = règle globale/fallback"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /commission_config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/commission_config",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "commission_config"
+              ]
+            },
+            "description": "Admin uniquement",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"pourcentage\",\n  \"valeur\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /commission_config/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/commission_config/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "commission_config",
+                ":id"
+              ]
+            },
+            "description": "Admin uniquement",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"pourcentage\",\n  \"valeur\": 0,\n  \"actif\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /commission_config/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/commission_config/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "commission_config",
+                ":id"
+              ]
+            },
+            "description": "Admin uniquement"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Offres",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /offres",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/offres",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offres"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST /offres",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/offres",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offres"
+              ]
+            },
+            "description": "Self-service (publie=true par défaut, non réglable à la création)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categorie\": \"\",\n  \"titre\": \"\",\n  \"prix\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /offres/{id}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/offres/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offres",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /offres/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/offres/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offres",
+                ":id"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categorie\": \"\",\n  \"titre\": \"\",\n  \"description\": \"\",\n  \"prestations\": [\n    \"\"\n  ],\n  \"prix\": 0,\n  \"unite_prix\": \"\",\n  \"delai_heures\": 0,\n  \"publie\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /offres/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/offres/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "offres",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Promotions",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /promotions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/promotions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "promotions"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST /promotions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/promotions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "promotions"
+              ]
+            },
+            "description": "Self-service. debut = now() par défaut, active toujours true à la création.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"\",\n  \"remise_pct\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /promotions/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/promotions/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "promotions",
+                ":id"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"\",\n  \"description\": \"\",\n  \"remise_pct\": 0,\n  \"fin\": \"2026-01-01T00:00:00.000Z\",\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /promotions/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/promotions/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "promotions",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Realisations",
+      "description": "",
+      "item": [
+        {
+          "name": "GET /realisations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/realisations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "realisations"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "POST /realisations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/realisations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "realisations"
+              ]
+            },
+            "description": "Self-service. image_url pointe vers le bucket Storage `maideres`.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image_url\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /realisations/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/realisations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "realisations",
+                ":id"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "RBAC / gestion utilisateurs — hors périmètre `@maideres/contracts` (sécurité, pas domaine métier).",
+      "item": [
+        {
+          "name": "GET /admin/users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Lister les profils (staff)"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /admin/users/invite",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/users/invite",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                "invite"
+              ]
+            },
+            "description": "Inviter un utilisateur (admin)"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /admin/users/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/users/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "users",
+                ":id"
+              ]
+            },
+            "description": "Modifier un profil (admin)"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /admin/rbac/users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/rbac/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rbac",
+                "users"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET /admin/rbac/roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/rbac/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rbac",
+                "roles"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "GET /admin/rbac/audit-logs/export",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/rbac/audit-logs/export",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "rbac",
+                "audit-logs",
+                "export"
+              ]
+            },
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

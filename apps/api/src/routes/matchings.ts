@@ -153,6 +153,21 @@ matchingsRouter.patch('/:id/accepter', async (c) => {
 
   await db.from('demandes').update({ statut: 'matchee' }).eq('id', matching.demande_id)
 
+  // Le suivi terrain (checkin/statut/checkout, côté ERP ET self-service
+  // prestataire/client — cf. apps/api/src/routes/interventions.ts) porte sur
+  // la ligne `interventions`, jamais créée automatiquement jusqu'ici : sans
+  // elle, un matching accepté n'avait tout simplement rien à suivre nulle
+  // part. `date_planifiee` reprend `date_souhaitee` de la demande quand elle
+  // existe (niveau_urgence='planifie') ; sinon l'intervention démarre sans
+  // date fixe, à faire progresser directement par ses statuts.
+  const { data: demandeRow } = await db.from('demandes').select('date_souhaitee').eq('id', matching.demande_id).maybeSingle()
+  const { error: interventionError } = await db.from('interventions').insert({
+    matching_id:     id,
+    statut:          'planifiee',
+    date_planifiee:  (demandeRow as { date_souhaitee: string | null } | null)?.date_souhaitee ?? null,
+  })
+  if (interventionError) return c.json({ error: interventionError.message }, 500)
+
   await notifierClientDeLaDemande(matching.demande_id, 'MAIDERES : un prestataire a accepté votre demande.')
 
   return c.json({ data })
@@ -243,6 +258,26 @@ matchingsRouter.patch('/:id/cloturer', zValidator('json', CloturerMatchingSchema
     .select(MATCHING_FIELDS)
     .single()
   if (error) return c.json({ error: error.message }, 500)
+
+  // L'intervention liée (créée à l'acceptation, cf. PATCH /:id/accepter) doit
+  // clore en même temps que le matching : sans ça, le Kanban ERP (qui
+  // n'affiche que les statuts d'intervention non terminaux) la laisserait
+  // bloquée indéfiniment sur 'en_cours', et le reversement prestataire —
+  // amorcé uniquement par le trigger sur intervention.statut='realisee',
+  // cf. 0009_intervention_sync.sql — ne serait jamais créé. Le trigger
+  // réécrit aussi demandes.statut à sa manière (annulee en cas d'échec) ;
+  // on réapplique volontairement juste après la valeur voulue par cloturer
+  // (en_traitement, pour permettre un re-dispatch plutôt qu'une annulation).
+  const { data: interventionRow } = await db
+    .from('interventions').select('id, statut').eq('matching_id', id).maybeSingle()
+  const intervention = interventionRow as { id: string; statut: string } | null
+  if (intervention && !['realisee', 'echouee', 'annulee'].includes(intervention.statut)) {
+    const { error: interventionError } = await db
+      .from('interventions')
+      .update({ statut: issue === 'realise' ? 'realisee' : 'echouee' })
+      .eq('id', intervention.id)
+    if (interventionError) return c.json({ error: interventionError.message }, 500)
+  }
 
   await db
     .from('demandes')

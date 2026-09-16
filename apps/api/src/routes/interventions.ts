@@ -44,7 +44,7 @@ async function canAccessIntervention(user: { id: string; role: string }, matchin
 // ── GET /api/interventions — liste, filtrée par rôle ──────────────────────────
 interventionsRouter.get('/', async (c) => {
   const user = c.get('user')
-  const { statut } = c.req.query()
+  const { statut, matching_id } = c.req.query()
 
   let query = db.from('interventions').select(INTERVENTION_FIELDS)
 
@@ -69,6 +69,7 @@ interventionsRouter.get('/', async (c) => {
   }
 
   if (statut) query = query.eq('statut', statut)
+  if (matching_id) query = query.eq('matching_id', matching_id)
 
   const { data, error } = await query.order('created_at', { ascending: false })
   if (error) return c.json({ error: error.message }, 500)

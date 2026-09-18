@@ -35,7 +35,7 @@ const BUCKET_STYLE: Record<StatusBucket, { className: string; icon: LucideIcon }
 }
 
 interface StatusDef { label: string; bucket: StatusBucket }
-type StatusMap = Record<string, StatusDef>
+export type StatusMap = Record<string, StatusDef>
 
 // ─── Demandes (packages/contracts/src/enums.ts → DemandeStatutSchema) ────
 export const DEMANDE_STATUS_MAP: StatusMap = {

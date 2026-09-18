@@ -155,6 +155,10 @@ export const prestatairesPg = pgTable('prestataires', {
   bio:              text('bio'),
   disponible:       boolean('disponible').notNull().default(true),
   zonesCouverture:  text('zones_couverture').array().notNull().default(sql`ARRAY[]::text[]`),
+  // pilote (0034) : marque un prestataire comme appartenant à l'échantillon
+  // de référence de la phase pilote — jamais réglable en self-service,
+  // uniquement par le staff (cf. PATCH /prestataires/:id/pilote).
+  pilote:           boolean('pilote').notNull().default(false),
 }, (table) => ({
   // GIN : categories est un uuid[] filtré par "contains" (@>) au dispatch —
   // un btree standard ne sait pas indexer un opérateur sur tableau.

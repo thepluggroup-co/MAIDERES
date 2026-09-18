@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
-import { CreatePrestataireSchema, UpdatePrestataireSchema, UpdatePrestataireStatutSchema } from '@maideres/contracts'
+import { CreatePrestataireSchema, UpdatePrestataireSchema, UpdatePrestataireStatutSchema, UpdatePrestatairePiloteSchema } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff, ownPrestataireId } from '../services/identity.service'
@@ -15,7 +15,7 @@ if (!supabaseAdmin) {
 const db = supabaseAdmin!
 
 const PRESTATAIRE_FIELDS =
-  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier_id, metier_categorie:categories_services(libelle), bio, disponible, zones_couverture'
+  'id, profile_id, nom, telephone, categories, quartier, geoloc_lat, geoloc_lng, statut, note_moyenne, taux_commission, date_recrutement, ville, metier_id, metier_categorie:categories_services(libelle), bio, disponible, zones_couverture, pilote'
 
 // Même aplatissement que côté public (cf. apps/api/src/routes/public.ts) :
 // l'embed Supabase `metier_categorie:categories_services(libelle)` devient
@@ -37,12 +37,13 @@ function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
 // staff : tout. prestataire : sa propre ligne (tout statut). client : uniquement statut=actif.
 prestatairesRouter.get('/', async (c) => {
   const user = c.get('user')
-  const { categorie, quartier, statut } = c.req.query()
+  const { categorie, quartier, statut, pilote } = c.req.query()
 
   let query = db.from('prestataires').select(PRESTATAIRE_FIELDS)
 
   if (isStaff(user.role)) {
     if (statut) query = query.eq('statut', statut)
+    if (pilote !== undefined) query = query.eq('pilote', pilote === 'true')
   } else {
     const own = await ownPrestataireId(user.id)
     if (own) {
@@ -197,6 +198,21 @@ prestatairesRouter.patch(
 
     const { data, error } = await db.from('prestataires').update({ statut }).eq('id', id).select(PRESTATAIRE_FIELDS).single()
     if (error) return c.json({ error: error.message }, 500)
+    return c.json({ data: aplatirMetier(data) })
+  },
+)
+
+// ── PATCH /api/prestataires/:id/pilote — marquer l'échantillon pilote (staff) ──
+prestatairesRouter.patch(
+  '/:id/pilote',
+  requireRole(['admin', 'superviseur', 'operateur']),
+  zValidator('json', UpdatePrestatairePiloteSchema),
+  async (c) => {
+    const id = c.req.param('id')
+    const { pilote } = c.req.valid('json')
+    const { data, error } = await db.from('prestataires').update({ pilote }).eq('id', id).select(PRESTATAIRE_FIELDS).single()
+    if (error) return c.json({ error: error.message }, 500)
+    if (!data) throw new HTTPException(404, { message: 'Prestataire introuvable' })
     return c.json({ data: aplatirMetier(data) })
   },
 )

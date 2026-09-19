@@ -9,6 +9,7 @@ export interface PrestatairesFilter {
   categorie?: string
   quartier?:  string
   statut?:    PrestataireStatut
+  pilote?:    boolean
 }
 
 function buildQuery(filter: PrestatairesFilter): string {
@@ -16,6 +17,7 @@ function buildQuery(filter: PrestatairesFilter): string {
   if (filter.categorie) params.set('categorie', filter.categorie)
   if (filter.quartier)  params.set('quartier', filter.quartier)
   if (filter.statut)    params.set('statut', filter.statut)
+  if (filter.pilote !== undefined) params.set('pilote', String(filter.pilote))
   const qs = params.toString()
   return qs ? `?${qs}` : ''
 }
@@ -82,6 +84,21 @@ export function useUpdatePrestataireStatut() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['prestataires'] })
       toast.success('Statut mis à jour')
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Erreur de mise à jour'),
+  })
+}
+
+/** Marque/démarque l'appartenance à l'échantillon de référence du pilote
+ *  (0034) — staff seulement, orthogonal au statut. */
+export function useUpdatePrestatairePilote() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, pilote }: { id: string; pilote: boolean }) =>
+      apiClient.patch<{ data: Prestataire }>(`/api/prestataires/${id}/pilote`, { pilote }),
+    onSuccess: (_, { pilote }) => {
+      void qc.invalidateQueries({ queryKey: ['prestataires'] })
+      toast.success(pilote ? 'Ajouté à l\u2019échantillon pilote' : 'Retiré de l\u2019échantillon pilote')
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Erreur de mise à jour'),
   })

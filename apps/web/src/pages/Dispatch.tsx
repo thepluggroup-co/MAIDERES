@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Send, CheckCircle2, XCircle } from 'lucide-react'
-import { ModuleHeader, Section, Table, Td, Vide, Chip } from '@/components/erp'
+import { ModuleHeader, Section, Table, Td, Vide, Chip, TONE } from '@/components/erp'
 import { Button } from '@/components/ui/button'
 import { useDemandes } from '@/hooks/useDemandes'
 import type { Demande, NiveauUrgence } from '@/hooks/useDemandes'
@@ -16,17 +16,17 @@ import type { Matching, MatchingStatut } from '@/hooks/useMatchings'
 // ── Libellés & tons ────────────────────────────────────────────────────────────
 
 const URGENCES: { value: NiveauUrgence; label: string; tone: string; poids: number }[] = [
-  { value: 'immediate', label: 'Immédiate', tone: 'bg-destructive/12 text-destructive border-destructive/30', poids: 0 },
-  { value: 'urgent',    label: 'Urgent',    tone: 'bg-warning/15 text-warning-foreground border-warning/40', poids: 1 },
-  { value: 'planifie',  label: 'Planifié',  tone: 'bg-info/12 text-info border-info/30', poids: 2 },
+  { value: 'immediate', label: 'Immédiate', tone: TONE.litige, poids: 0 },
+  { value: 'urgent',    label: 'Urgent',    tone: TONE.attente, poids: 1 },
+  { value: 'planifie',  label: 'Planifié',  tone: TONE.cours, poids: 2 },
 ]
 
 const STATUTS_MATCHING: { value: MatchingStatut; label: string; tone: string }[] = [
-  { value: 'propose', label: 'Proposé', tone: 'bg-info/12 text-info border-info/30' },
-  { value: 'accepte', label: 'Accepté', tone: 'bg-success/12 text-success border-success/30' },
-  { value: 'refuse',  label: 'Refusé',  tone: 'bg-destructive/12 text-destructive border-destructive/30' },
-  { value: 'realise', label: 'Réalisé', tone: 'bg-success/12 text-success border-success/30' },
-  { value: 'echoue',  label: 'Échoué',  tone: 'bg-destructive/12 text-destructive border-destructive/30' },
+  { value: 'propose', label: 'Proposé', tone: TONE.cours },
+  { value: 'accepte', label: 'Accepté', tone: TONE.succes },
+  { value: 'refuse',  label: 'Refusé',  tone: TONE.litige },
+  { value: 'realise', label: 'Réalisé', tone: TONE.succes },
+  { value: 'echoue',  label: 'Échoué',  tone: TONE.litige },
 ]
 
 const libelle = (list: { value: string; label: string }[], v: string | null | undefined) =>
@@ -87,7 +87,7 @@ function ClotureForm({ matchingId, onChanged }: { matchingId: string; onChanged:
         type="button"
         onClick={() => setIssue('realise')}
         className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
-          issue === 'realise' ? 'border-success bg-success/10 text-success' : 'border-input text-muted-foreground hover:bg-muted/50'
+          issue === 'realise' ? 'border-success-foreground/40 bg-success text-success-foreground' : 'border-input text-muted-foreground hover:bg-muted/50'
         }`}
       >
         <CheckCircle2 className="h-3.5 w-3.5" /> Réalisé
@@ -96,7 +96,7 @@ function ClotureForm({ matchingId, onChanged }: { matchingId: string; onChanged:
         type="button"
         onClick={() => setIssue('echoue')}
         className={`flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
-          issue === 'echoue' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-input text-muted-foreground hover:bg-muted/50'
+          issue === 'echoue' ? 'border-destructive-foreground/40 bg-destructive text-destructive-foreground' : 'border-input text-muted-foreground hover:bg-muted/50'
         }`}
       >
         <XCircle className="h-3.5 w-3.5" /> Échoué
@@ -201,7 +201,7 @@ export default function Dispatch() {
                   </Td>
                   <Td className="text-muted-foreground">{client?.quartier ?? '—'}</Td>
                   <Td><Chip tone={ton(URGENCES, d.niveau_urgence)}>{libelle(URGENCES, d.niveau_urgence)}</Chip></Td>
-                  <Td className={retard ? 'font-semibold text-destructive' : ''}>{resteAvantDelai(d.delai_cible)}</Td>
+                  <Td className={retard ? 'font-semibold text-destructive-foreground' : ''}>{resteAvantDelai(d.delai_cible)}</Td>
                   <Td>
                     <Button size="sm" variant={d.id === selectedId ? 'secondary' : 'outline'} className="h-7 text-xs"
                       onClick={() => setSelectedId(d.id === selectedId ? null : d.id)}>
@@ -227,13 +227,13 @@ export default function Dispatch() {
                   <Td className="text-muted-foreground">
                     {p.quartier ?? '—'}
                     {clientSelectionne?.quartier && p.quartier === clientSelectionne.quartier && (
-                      <span className="ml-1.5 text-success font-medium">· même quartier</span>
+                      <span className="ml-1.5 text-success-foreground font-medium">· même quartier</span>
                     )}
                   </Td>
                   <Td className="cell-num">{Number(p.note_moyenne).toFixed(1)}</Td>
                   <Td>
                     <Button
-                      size="sm" className="h-7 text-xs"
+                      size="sm" variant="outline" className="h-7 text-xs"
                       disabled={proposer.isPending}
                       onClick={() => proposer.mutate({ demande_id: demandeSelectionnee.id, prestataire_id: p.id })}
                     >

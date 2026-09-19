@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { ModuleHeader, Section, Table, Td, Vide, Kpi, Chip } from '@/components/erp'
+import { ModuleHeader, Section, Table, Td, Vide, Kpi, Chip, TONE } from '@/components/erp'
 import { Champ, Txt, Sel } from '@/components/erp-form'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,9 +13,9 @@ import { useCommissionConfig } from '@/hooks/useCommissionConfig'
 // ── Libellés & tons (adaptés au schéma backend : 3 statuts, pas de "vérifié") ──
 
 const STATUTS_PRESTATAIRE: { value: PrestataireStatut; label: string; tone: string }[] = [
-  { value: 'en_attente', label: 'En attente', tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
-  { value: 'actif',      label: 'Actif',      tone: 'bg-success/12 text-success border-success/30' },
-  { value: 'suspendu',   label: 'Suspendu',   tone: 'bg-destructive/12 text-destructive border-destructive/30' },
+  { value: 'en_attente', label: 'En attente', tone: TONE.attente },
+  { value: 'actif',      label: 'Actif',      tone: TONE.succes },
+  { value: 'suspendu',   label: 'Suspendu',   tone: TONE.litige },
 ]
 
 const libelle = (list: { value: string; label: string }[], v: string | null | undefined) =>
@@ -130,7 +130,7 @@ function ActionsValidation({ p, onChanged }: { p: Prestataire; onChanged: () => 
   return (
     <div className="flex flex-wrap gap-1.5">
       {suivant && (
-        <Button size="sm" className="h-8 text-xs" onClick={() => set(suivant.cible)}>
+        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => set(suivant.cible)}>
           {suivant.label}
         </Button>
       )}
@@ -169,7 +169,7 @@ function CommissionCell({ p, onChanged }: { p: Prestataire; onChanged: () => voi
       <div className="flex items-center gap-1.5">
         <span>{affichee}</span>
         <button type="button" title="Modifier la commission" onClick={() => { setValeur(p.taux_commission ?? ''); setEdition(true) }}
-          className="text-[11px] font-medium text-primary hover:underline">
+          className="text-[11px] font-medium text-[var(--ring)] hover:underline">
           modifier
         </button>
       </div>
@@ -184,7 +184,7 @@ function CommissionCell({ p, onChanged }: { p: Prestataire; onChanged: () => voi
         placeholder="défaut"
         className="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
       />
-      <Button size="sm" className="h-8 text-xs" onClick={async () => {
+      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => {
         await update.mutateAsync({ id: p.id, taux_commission: valeur === '' ? null : Number(valeur) })
         setEdition(false)
         onChanged()

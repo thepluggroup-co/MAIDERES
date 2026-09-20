@@ -57,6 +57,21 @@ function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
   return { ...reste, metier_libelle: embed?.libelle ?? null }
 }
 
+// photo_couverture (recommandation "ressembler davantage à Uber/Bolt/FB
+// Marketplace") : la liste de recherche était jusqu'ici purement textuelle.
+// La plus récente réalisation publiée sert de vignette — aucune nouvelle
+// donnée à saisir, la galerie self-service existe déjà (0027). Même
+// remarque de typage que ci-dessus : embed FK-vers-PK, un objet à
+// l'exécution malgré le tableau que TS devine.
+type RealisationEmbed = { image_url: string } | { image_url: string }[] | null | undefined
+function aplatirPhotoCouverture<T extends { realisations?: RealisationEmbed }>(
+  row: T,
+): Omit<T, 'realisations'> & { photo_couverture: string | null } {
+  const { realisations, ...reste } = row
+  const embed = Array.isArray(realisations) ? realisations[0] : realisations
+  return { ...reste, photo_couverture: embed?.image_url ?? null }
+}
+
 // ── GET /api/public/prestataires — annuaire public, filtres ville/quartier/métier/nom ──
 // NB (0031) : `categorie_id` remplace l'ancien paramètre `categorie` (texte
 // libre) — c'est désormais l'UUID d'une ligne categories_services. Ancien
@@ -65,7 +80,12 @@ function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
 publicRouter.get('/prestataires', async (c) => {
   const { ville, quartier, categorie_id, recherche } = c.req.query()
 
-  let query = db.from('prestataires').select(PRESTATAIRE_PUBLIC_FIELDS).eq('statut', 'actif')
+  let query = db
+    .from('prestataires')
+    .select(`${PRESTATAIRE_PUBLIC_FIELDS}, realisations(image_url)`)
+    .eq('statut', 'actif')
+    .order('created_at', { ascending: false, foreignTable: 'realisations' })
+    .limit(1, { foreignTable: 'realisations' })
   if (ville) query = query.eq('ville', ville)
   if (quartier) query = query.eq('quartier', quartier)
   if (categorie_id) query = query.eq('metier_id', categorie_id)
@@ -73,7 +93,7 @@ publicRouter.get('/prestataires', async (c) => {
 
   const { data, error } = await query.order('note_moyenne', { ascending: false }).order('nom').limit(60)
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data: (data ?? []).map(aplatirMetier) })
+  return c.json({ data: (data ?? []).map(aplatirMetier).map(aplatirPhotoCouverture) })
 })
 
 // ── GET /api/public/prestataires/:id — fiche publique complète ───────────────

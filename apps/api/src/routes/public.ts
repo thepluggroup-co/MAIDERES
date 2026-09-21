@@ -166,3 +166,35 @@ publicRouter.get('/promotions', async (c) => {
   if (error) return c.json({ error: error.message }, 500)
   return c.json({ data })
 })
+
+// ── GET /api/public/tarifs-indicatifs — fourchette de prix indicative ────────
+// Recommandation "transparence tarifaire" (comparatif Uber/Bolt/FB
+// Marketplace, 17/09/2026) : donner un ordre de grandeur avant la 1ère
+// demande, sur le parcours générique.
+//
+// Volontairement GLOBALE, pas par catégorie : offres.categorie est un texte
+// libre choisi par chaque prestataire (pas de FK vers categories_services,
+// cf. le commentaire du schéma) — rapprocher ce texte des catégories
+// formelles du tunnel de demande serait un rapprochement approximatif, donc
+// un chiffre potentiellement faux affiché comme une donnée fiable. Une
+// fourchette globale, elle, reste exacte.
+//
+// p10/p90 plutôt que min/max brut : une seule offre exceptionnelle (très
+// chère ou promotionnelle à prix cassé) ne doit pas fausser l'affichage.
+// Sous 3 offres publiées au total, on ne renvoie rien plutôt qu'une
+// fourchette basée sur un échantillon trop faible pour être honnête.
+publicRouter.get('/tarifs-indicatifs', async (c) => {
+  const { data: actifs, error: errActifs } = await db.from('prestataires').select('id').eq('statut', 'actif')
+  if (errActifs) return c.json({ error: errActifs.message }, 500)
+  const ids = (actifs ?? []).map((p) => (p as { id: string }).id)
+  if (ids.length === 0) return c.json({ data: null })
+
+  const { data, error } = await db.from('offres').select('prix').eq('publie', true).in('prestataire_id', ids)
+  if (error) return c.json({ error: error.message }, 500)
+
+  const prix = (data ?? []).map((o) => (o as { prix: number }).prix).sort((a, b) => a - b)
+  if (prix.length < 3) return c.json({ data: null })
+
+  const percentile = (p: number) => prix[Math.floor((prix.length - 1) * p)]
+  return c.json({ data: { min: percentile(0.1), max: percentile(0.9), echantillon: prix.length } })
+})

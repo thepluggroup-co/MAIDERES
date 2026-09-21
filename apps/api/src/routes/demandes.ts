@@ -5,7 +5,6 @@ import { supabaseAdmin } from '@maideres/db'
 import { CreateDemandeSchema, UpdateDemandeStatutSchema, DEMANDE_STAFF_TRANSITIONS } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { isStaff, ownClientId, ownPrestataireId } from '../services/identity.service'
-import { notifier } from '../services/notification.service'
 
 export const demandesRouter = new Hono<{ Variables: HonoVariables }>()
 
@@ -103,11 +102,12 @@ demandesRouter.post('/', zValidator('json', CreateDemandeSchema), async (c) => {
     if (!clientId) throw new HTTPException(403, { message: "Aucune fiche client associée à ce compte" })
   }
 
-  // Sélection directe d'une offre (fiche publique d'un prestataire) : la
-  // demande porte la trace de ce choix, et vaut délégation implicite —
-  // proposer directement ce prestataire, sans dispatch staff manuel. Le
-  // prestataire garde la main : il doit toujours accepter ou refuser (cf.
-  // PATCH /api/matchings/:id/accepter), comme pour une proposition classique.
+  // Offre choisie par le client sur la fiche publique d'un prestataire : la
+  // demande en garde la trace (offre_id = préférence exprimée), mais elle
+  // entre TOUJOURS d'abord dans l'ERP au statut 'nouvelle'. Aucun matching
+  // n'est créé ici et le prestataire n'est pas notifié : c'est le staff
+  // MAIDERES qui valide puis propose (cf. POST /api/matchings), ce qui
+  // maintient MAIDERES comme intermédiaire entre client et prestataire.
   let offre: { id: string; prestataire_id: string; publie: boolean } | null = null
   if (body.offre_id) {
     const { data: offreRow, error: offreError } = await db
@@ -135,35 +135,6 @@ demandesRouter.post('/', zValidator('json', CreateDemandeSchema), async (c) => {
     .single()
 
   if (error) return c.json({ error: error.message }, 500)
-
-  if (offre) {
-    const { data: prestataire, error: prestataireError } = await db
-      .from('prestataires').select('id, statut, profile_id, telephone').eq('id', offre.prestataire_id).maybeSingle()
-    if (prestataireError) return c.json({ error: prestataireError.message }, 500)
-    const presta = prestataire as { id: string; statut: string; profile_id: string; telephone: string } | null
-    if (presta && presta.statut === 'actif') {
-      const demandeId = (data as { id: string }).id
-      const { error: matchingError } = await db.from('matchings').insert({
-        demande_id:     demandeId,
-        prestataire_id: presta.id,
-        operateur_id:   null,
-        statut:         'propose',
-        proposed_at:    new Date().toISOString(),
-      })
-      if (matchingError) return c.json({ error: matchingError.message }, 500)
-
-      await db.from('demandes').update({ statut: 'en_traitement' }).eq('id', demandeId)
-      ;(data as { statut: string }).statut = 'en_traitement'
-
-      await notifier({
-        profileId: presta.profile_id,
-        telephone: presta.telephone,
-        message:   'MAIDERES : une nouvelle demande vous a été proposée. Connectez-vous pour accepter ou refuser.',
-      })
-    }
-    // Prestataire introuvable/inactif : la demande reste 'nouvelle', visible
-    // par le staff pour dispatch manuel classique — jamais bloquante.
-  }
 
   return c.json({ data }, 201)
 })

@@ -2,10 +2,10 @@
  * demande-depuis-offre.test.ts
  *
  * Sélection directe d'une offre sur la fiche publique d'un prestataire
- * (0033) : POST /api/demandes avec offre_id doit créer la demande ET
- * proposer automatiquement le prestataire de cette offre — sans dispatch
- * staff manuel — tout en laissant le prestataire libre d'accepter/refuser
- * comme pour une proposition classique (cf. PATCH /:id/accepter).
+ * (0033) : POST /api/demandes avec offre_id crée la demande au statut
+ * 'nouvelle' en conservant l'offre choisie, mais NE crée AUCUN matching :
+ * la demande passe d'abord par l'ERP (dispatch staff) avant d'atteindre
+ * le prestataire.
  */
 import { describe, it, expect, beforeAll, vi } from 'vitest'
 import type { FakeSupabase } from './fakeSupabase'
@@ -57,7 +57,7 @@ async function call(method: string, path: string, role: Parameters<typeof authHe
 }
 
 describe('POST /api/demandes avec offre_id', () => {
-  it('crée la demande, propose automatiquement le prestataire, sans dispatch staff', async () => {
+  it("crée la demande 'nouvelle' avec l'offre en préférence, sans matching automatique", async () => {
     const res = await call('POST', '/api/demandes', 'apprenant', CLIENT_USER_ID, {
       categorie_id: CATEGORIE_ID,
       description:  'Robinet de cuisine qui fuit',
@@ -66,16 +66,12 @@ describe('POST /api/demandes avec offre_id', () => {
     expect(res.status).toBe(201)
     const { data: demande } = await res.json() as { data: { id: string; statut: string; offre_id: string } }
     expect(demande.offre_id).toBe(OFFRE_ID)
-    // L'API dispatch elle-même : la demande passe directement à
-    // 'en_traitement', comme quand le staff propose un prestataire.
-    expect(demande.statut).toBe('en_traitement')
+    expect(demande.statut).toBe('nouvelle')
 
+    // Le prestataire ne voit rien tant que le staff n'a pas dispatché.
     const matchingsRes = await call('GET', `/api/matchings?demande_id=${demande.id}`, 'apprenant', PRESTA_USER_ID)
-    const { data: matchings } = await matchingsRes.json() as { data: { statut: string; prestataire_id: string; operateur_id: string | null }[] }
-    expect(matchings).toHaveLength(1)
-    expect(matchings[0].statut).toBe('propose')
-    expect(matchings[0].prestataire_id).toBe(PRESTA_ROW_ID)
-    expect(matchings[0].operateur_id).toBeNull()
+    const { data: matchings } = await matchingsRes.json() as { data: unknown[] }
+    expect(matchings).toHaveLength(0)
   })
 
   it("refuse une offre qui n'est plus publiée", async () => {

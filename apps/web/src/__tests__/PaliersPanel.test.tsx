@@ -13,4 +13,11 @@ describe('calculerPaliers (dossier prestataire provisoire)', () => {
     expect(r.palier3.complet).toBe(true)
     expect(r.palier_atteint).toBe(1)
   })
+  it('palier 2 : adresse « Mobile » accepte l\u2019absence d\u2019adresse ; RCCM/NIU requis seulement pour une entreprise', () => {
+    const d = { identite_type: 'cni' as const, doc_identite_path: 'a/identite.pdf', identite_verifiee_at: 'now', adresse_mobile: true,
+      realisations_verifiees: true, references_contacts: [{ nom: 'A', telephone: '123456' }], conditions_acceptees_at: 'now' }
+    expect(calculerPaliers(base, 1, d).palier2.complet).toBe(true)
+    const ent = calculerPaliers(base, 1, { ...d, est_entreprise: true }).palier2
+    expect(ent.manquants).toEqual(['RCCM (PDF)', 'NIU (PDF)'])
+  })
 })

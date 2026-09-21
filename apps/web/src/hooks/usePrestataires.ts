@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
 import type {
-  Prestataire, PrestataireStatut, PrestatairePaliersDossier, PaliersCalcules, UpdatePrestatairePaliersInput,
+  Prestataire, PrestataireStatut, PrestatairePaliersDossier, PaliersCalcules, UpdatePrestatairePaliersInput, DocumentType,
 } from '@maideres/contracts'
 
 export type { Prestataire, PrestataireStatut }
@@ -129,4 +129,47 @@ export function useUpdatePrestatairePaliers(id: string) {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Erreur de mise à jour'),
   })
+}
+
+/** Dépôt d'un PDF (pièce d'identité, RCCM, NIU) — staff seulement, Storage privé (0038). */
+export function useUploadPalierDocument(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ type, fichier }: { type: DocumentType; fichier: File }) => {
+      const form = new FormData()
+      form.set('file', fichier)
+      return apiClient.postForm<{ data: PaliersReponse }>(`/api/prestataires/${id}/paliers/documents/${type}`, form)
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['prestataire-paliers', id] })
+      toast.success('Document déposé')
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Échec du dépôt'),
+  })
+}
+
+export function useDeletePalierDocument(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (type: DocumentType) =>
+      apiClient.delete<{ data: PaliersReponse }>(`/api/prestataires/${id}/paliers/documents/${type}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['prestataire-paliers', id] })
+      toast.success('Document supprimé')
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Échec de la suppression'),
+  })
+}
+
+/** Ouvre le PDF via une URL signée courte (le fenêtre est ouverte tout de suite pour éviter le blocage de pop-up). */
+export async function ouvrirDocumentPalier(id: string, type: DocumentType) {
+  const fenetre = window.open('', '_blank')
+  try {
+    const res = await apiClient.get<{ data: { url: string } }>(`/api/prestataires/${id}/paliers/documents/${type}`)
+    if (fenetre) fenetre.location.href = res.data.url
+    else window.location.href = res.data.url
+  } catch (e) {
+    fenetre?.close()
+    toast.error(e instanceof Error ? e.message : 'Document indisponible')
+  }
 }

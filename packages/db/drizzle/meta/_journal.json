@@ -230,14 +230,42 @@
       "idx": 32,
       "version": "7",
       "when": 1789430900000,
-      "tag": "0036_avis_bidirectionnel",
+      "tag": "0036_fix_guard_prestataire_service_role",
       "breakpoints": true
     },
     {
       "idx": 33,
       "version": "7",
       "when": 1789431000000,
-      "tag": "0037_avis_bidirectionnel_rls",
+      "tag": "0037_avis_note_moyenne",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1789431100000,
+      "tag": "0038_paliers_documents",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1789431200000,
+      "tag": "0039_avis_bidirectionnel",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1789431300000,
+      "tag": "0040_avis_bidirectionnel_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1789431400000,
+      "tag": "0041_fix_note_moyenne_auteur_client",
       "breakpoints": true
     }
   ]

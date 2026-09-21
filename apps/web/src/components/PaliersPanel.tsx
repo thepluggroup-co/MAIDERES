@@ -1,15 +1,20 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { toast } from 'sonner'
 import { Chip, TONE } from '@/components/erp'
 import { Champ, Txt, Sel } from '@/components/erp-form'
 import { Button } from '@/components/ui/button'
-import { usePrestatairePaliers, useUpdatePrestatairePaliers } from '@/hooks/usePrestataires'
+import {
+  usePrestatairePaliers, useUpdatePrestatairePaliers, useUploadPalierDocument, useDeletePalierDocument, ouvrirDocumentPalier,
+} from '@/hooks/usePrestataires'
 import type { PaliersReponse } from '@/hooks/usePrestataires'
-import { IDENTITE_TYPES, MM_OPERATEURS } from '@maideres/contracts'
+import { IDENTITE_TYPES, MM_OPERATEURS, DOCUMENT_LABELS, DOCUMENT_MAX_BYTES } from '@maideres/contracts'
+import type { DocumentType, PrestatairePaliersDossier } from '@maideres/contracts'
 
 /**
  * Dossier prestataire en 3 paliers — VERSION PROVISOIRE (0035).
  * Informatif : ne bloque ni la validation du statut ni le dispatch.
- * Aucun numéro de pièce ni photo n'est saisi : le staff coche « pièce vue ».
+ * Les pièces (identité, RCCM, NIU) sont déposées en PDF dans un espace privé
+ * (Storage) et consultées par lien signé de courte durée.
  */
 const IDENTITE_LABELS: Record<(typeof IDENTITE_TYPES)[number], string> = {
   cni: "Carte nationale d'identité", passeport: 'Passeport', recepisse: 'Récépissé', niu_rccm: 'NIU / RCCM (entreprise)',
@@ -27,12 +32,47 @@ function Case({ label, checked, onChange }: { label: string; checked: boolean; o
   )
 }
 
+function LigneDocument({ id, type, dossier, requis }: { id: string; type: DocumentType; dossier: PrestatairePaliersDossier | null; requis: boolean }) {
+  const envoi = useUploadPalierDocument(id)
+  const suppr = useDeletePalierDocument(id)
+  const depose = dossier?.[`doc_${type}_at` as keyof PrestatairePaliersDossier] as string | null | undefined
+  const choisir = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    e.target.value = ''
+    if (!f) return
+    if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) return void toast.error('Le fichier doit être un PDF')
+    if (f.size > DOCUMENT_MAX_BYTES) return void toast.error('Fichier trop volumineux (5 Mo maximum)')
+    envoi.mutate({ type, fichier: f })
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border border-border px-3 py-2 text-sm">
+      <span className="min-w-28 font-medium">{DOCUMENT_LABELS[type]}{requis ? ' *' : ''}</span>
+      {depose ? (
+        <>
+          <Chip tone={TONE.succes}>{`Déposé le ${new Date(depose).toLocaleDateString('fr-FR')}`}</Chip>
+          <Button size="sm" variant="ghost" onClick={() => void ouvrirDocumentPalier(id, type)}>Voir</Button>
+          <Button size="sm" variant="ghost" disabled={suppr.isPending}
+            onClick={() => { if (confirm(`Supprimer ${DOCUMENT_LABELS[type]} ?`)) suppr.mutate(type) }}>Supprimer</Button>
+        </>
+      ) : (
+        <Chip tone={TONE.attente}>{requis ? 'Manquant' : 'Non déposé'}</Chip>
+      )}
+      <label className="ml-auto cursor-pointer text-xs font-semibold text-primary hover:underline">
+        {envoi.isPending ? 'Envoi…' : depose ? 'Remplacer (PDF)' : 'Déposer (PDF)'}
+        <input type="file" accept="application/pdf,.pdf" className="sr-only" disabled={envoi.isPending} onChange={choisir} />
+      </label>
+    </div>
+  )
+}
+
 function Formulaire({ id, data }: { id: string; data: PaliersReponse }) {
   const d = data.dossier
   const maj = useUpdatePrestatairePaliers(id)
   const [identiteType, setIdentiteType] = useState(d?.identite_type ?? '')
   const [identiteVue, setIdentiteVue] = useState(Boolean(d?.identite_verifiee_at))
   const [adresse, setAdresse] = useState(d?.adresse_activite ?? '')
+  const [mobile, setMobile] = useState(d?.adresse_mobile ?? false)
+  const [entreprise, setEntreprise] = useState(d?.est_entreprise ?? false)
   const [realisations, setRealisations] = useState(d?.realisations_verifiees ?? false)
   const [refs, setRefs] = useState<{ nom: string; telephone: string }[]>([
     d?.references_contacts?.[0] ?? { nom: '', telephone: '' },
@@ -49,7 +89,9 @@ function Formulaire({ id, data }: { id: string; data: PaliersReponse }) {
     maj.mutate({
       identite_type: (identiteType || null) as (typeof IDENTITE_TYPES)[number] | null,
       identite_verifiee: identiteVue,
-      adresse_activite: adresse.trim() || null,
+      adresse_activite: mobile ? null : adresse.trim() || null,
+      adresse_mobile: mobile,
+      est_entreprise: entreprise,
       realisations_verifiees: realisations,
       references_contacts: refs.filter((r) => r.nom.trim() && r.telephone.trim()),
       conditions_acceptees: cgu,
@@ -70,8 +112,18 @@ function Formulaire({ id, data }: { id: string; data: PaliersReponse }) {
             {IDENTITE_TYPES.map((t) => <option key={t} value={t}>{IDENTITE_LABELS[t]}</option>)}
           </Sel>
         </Champ>
-        <Case label="Pièce d'identité vue par le staff (ni numéro ni photo conservés)" checked={identiteVue} onChange={setIdentiteVue} />
-        <Champ label="Adresse d'activité / repère"><Txt value={adresse} onChange={(e) => setAdresse(e.target.value)} /></Champ>
+        <Case label="Pièce d'identité vérifiée par le staff" checked={identiteVue} onChange={setIdentiteVue} />
+        <Case label="Prestataire entreprise (RCCM et NIU requis)" checked={entreprise} onChange={setEntreprise} />
+        <div className="space-y-2">
+          <LigneDocument id={id} type="identite" dossier={d} requis />
+          <LigneDocument id={id} type="rccm" dossier={d} requis={entreprise} />
+          <LigneDocument id={id} type="niu" dossier={d} requis={entreprise} />
+        </div>
+        <Champ label="Adresse d'activité / repère">
+          <Txt value={mobile ? '' : adresse} disabled={mobile} placeholder={mobile ? 'Mobile — se déplace uniquement' : ''}
+            onChange={(e) => setAdresse(e.target.value)} />
+        </Champ>
+        <Case label="Mobile (se déplace uniquement, pas de local)" checked={mobile} onChange={setMobile} />
         <Case label="Réalisations vérifiées (photos vues)" checked={realisations} onChange={setRealisations} />
         {refs.map((r, i) => (
           <div key={i} className="grid grid-cols-2 gap-2">

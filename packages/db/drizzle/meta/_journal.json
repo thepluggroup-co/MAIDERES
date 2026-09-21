@@ -225,6 +225,13 @@
       "when": 1789430800000,
       "tag": "0035_prestataire_paliers",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789430900000,
+      "tag": "0036_fix_guard_prestataire_service_role",
+      "breakpoints": true
     }
   ]
 }

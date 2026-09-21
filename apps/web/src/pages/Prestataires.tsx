@@ -7,6 +7,7 @@ import {
   usePrestataires, useCreatePrestataire, useUpdatePrestataire, useUpdatePrestataireStatut, useUpdatePrestatairePilote,
 } from '@/hooks/usePrestataires'
 import type { Prestataire, PrestataireStatut } from '@/hooks/usePrestataires'
+import { PaliersPanel } from '@/components/PaliersPanel'
 import { useCategories } from '@/hooks/useCategories'
 import { useCommissionConfig } from '@/hooks/useCommissionConfig'
 
@@ -344,6 +345,7 @@ export default function Prestataires() {
             <ActionsValidation p={fiche} onChanged={onChanged} />
             <ActionPilote p={fiche} onChanged={onChanged} />
           </div>
+          <PaliersPanel prestataireId={fiche.id} />
         </Section>
       )}
     </div>

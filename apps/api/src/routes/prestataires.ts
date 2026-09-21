@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { HTTPException } from 'hono/http-exception'
 import { supabaseAdmin } from '@maideres/db'
-import { CreatePrestataireSchema, UpdatePrestataireSchema, UpdatePrestataireStatutSchema, UpdatePrestatairePiloteSchema } from '@maideres/contracts'
+import { CreatePrestataireSchema, UpdatePrestataireSchema, UpdatePrestataireStatutSchema, UpdatePrestatairePiloteSchema, UpdatePrestatairePaliersSchema, calculerPaliers } from '@maideres/contracts'
+import type { PrestatairePaliersDossier } from '@maideres/contracts'
 import type { HonoVariables } from '../types'
 import { requireRole } from '../middleware/rbac'
 import { isStaff, ownPrestataireId } from '../services/identity.service'
@@ -214,6 +215,87 @@ prestatairesRouter.patch(
     if (error) return c.json({ error: error.message }, 500)
     if (!data) throw new HTTPException(404, { message: 'Prestataire introuvable' })
     return c.json({ data: aplatirMetier(data) })
+  },
+)
+
+// ── Dossier en 3 paliers (0035, PROVISOIRE, staff seulement) ──────────────────
+// Informatif : ne bloque ni l'activation ni le dispatch. Le palier atteint est
+// calculé à chaque lecture (packages/contracts/src/paliers.ts), jamais stocké.
+async function chargerPaliers(prestataireId: string) {
+  const { data: presta, error: prestaError } = await db
+    .from('prestataires')
+    .select('id, nom, telephone, categories, metier_id, quartier, ville, zones_couverture')
+    .eq('id', prestataireId)
+    .maybeSingle()
+  if (prestaError) throw new HTTPException(500, { message: prestaError.message })
+  if (!presta) throw new HTTPException(404, { message: 'Prestataire introuvable' })
+
+  const { data: offres, error: offresError } = await db.from('offres').select('id').eq('prestataire_id', prestataireId)
+  if (offresError) throw new HTTPException(500, { message: offresError.message })
+
+  const { data: dossier, error: dossierError } = await db
+    .from('prestataire_paliers').select('*').eq('prestataire_id', prestataireId).maybeSingle()
+  if (dossierError) throw new HTTPException(500, { message: dossierError.message })
+
+  const d = (dossier ?? null) as PrestatairePaliersDossier | null
+  return {
+    presta: presta as Parameters<typeof calculerPaliers>[0],
+    nbOffres: (offres ?? []).length,
+    dossier: d,
+  }
+}
+
+prestatairesRouter.get('/:id/paliers', requireRole(['admin', 'superviseur', 'operateur']), async (c) => {
+  const { presta, nbOffres, dossier } = await chargerPaliers(c.req.param('id'))
+  return c.json({ data: { dossier, paliers: calculerPaliers(presta, nbOffres, dossier) } })
+})
+
+prestatairesRouter.put(
+  '/:id/paliers',
+  requireRole(['admin', 'superviseur', 'operateur']),
+  zValidator('json', UpdatePrestatairePaliersSchema),
+  async (c) => {
+    const id = c.req.param('id')
+    const user = c.get('user')
+    const body = c.req.valid('json')
+    const { presta, nbOffres, dossier: avant } = await chargerPaliers(id)
+    const now = new Date().toISOString()
+
+    // Les cases à cocher deviennent des dates ; on garde la date d'origine si déjà cochée.
+    const patch: Record<string, unknown> = {}
+    for (const k of ['identite_type', 'adresse_activite', 'realisations_verifiees', 'references_contacts',
+      'mm_operateur', 'mm_numero', 'mm_titulaire', 'statut_fiscal'] as const) {
+      if (body[k] !== undefined) patch[k] = body[k]
+    }
+    const date = (flag: boolean | undefined, actuelle: string | null | undefined) =>
+      flag === undefined ? undefined : flag ? (actuelle ?? now) : null
+    const dates: [string, string | null | undefined][] = [
+      ['identite_verifiee_at', date(body.identite_verifiee, avant?.identite_verifiee_at)],
+      ['conditions_acceptees_at', date(body.conditions_acceptees, avant?.conditions_acceptees_at)],
+      ['commission_convenue_at', date(body.commission_convenue, avant?.commission_convenue_at)],
+    ]
+    for (const [col, val] of dates) if (val !== undefined) patch[col] = val
+
+    // Trace de la vérification : renseignée dès que le palier 2 est complet, effacée sinon.
+    const apres = { ...(avant ?? {}), ...patch } as Partial<PrestatairePaliersDossier>
+    const calcul = calculerPaliers(presta, nbOffres, apres)
+    if (calcul.palier2.complet) {
+      patch.verifie_par = avant?.verifie_par ?? user.id
+      patch.verifie_at = avant?.verifie_at ?? now
+    } else {
+      patch.verifie_par = null
+      patch.verifie_at = null
+    }
+    patch.updated_at = now
+
+    const q = avant
+      ? db.from('prestataire_paliers').update(patch).eq('prestataire_id', id)
+      : db.from('prestataire_paliers').insert({ prestataire_id: id, ...patch })
+    const { data, error } = await q.select('*').single()
+    if (error) return c.json({ error: error.message }, 500)
+
+    const dossier = data as PrestatairePaliersDossier
+    return c.json({ data: { dossier, paliers: calculerPaliers(presta, nbOffres, dossier) } })
   },
 )
 

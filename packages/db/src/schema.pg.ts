@@ -181,6 +181,27 @@ export type NouveauPrestatairePg = typeof prestatairesPg.$inferInsert
 // si publie=true (cf. filtre appliqué par /api/public/prestataires).
 // ══════════════════════════════════════════════════════════════════════════════
 
+// 0035 — dossier prestataire en 3 paliers (provisoire, staff seulement).
+// Aucun numéro de pièce ni photo stockés : type de pièce + date de vérif.
+export const prestatairePaliersPg = pgTable('prestataire_paliers', {
+  prestataireId:         uuid('prestataire_id').primaryKey().references(() => prestatairesPg.id, { onDelete: 'cascade' }),
+  identiteType:          text('identite_type'),
+  identiteVerifieeAt:    tsN('identite_verifiee_at'),
+  adresseActivite:       text('adresse_activite'),
+  realisationsVerifiees: boolean('realisations_verifiees').notNull().default(false),
+  referencesContacts:    jsonb('references_contacts').notNull().default(sql`'[]'::jsonb`),
+  conditionsAcceptees:   tsN('conditions_acceptees_at'),
+  verifiePar:            uuid('verifie_par').references(() => profilesPg.id, { onDelete: 'set null' }),
+  verifieAt:             tsN('verifie_at'),
+  mmOperateur:           text('mm_operateur'),
+  mmNumero:              text('mm_numero'),
+  mmTitulaire:           text('mm_titulaire'),
+  statutFiscal:          text('statut_fiscal'),
+  commissionConvenueAt:  tsN('commission_convenue_at'),
+  createdAt:             ts('created_at'),
+  updatedAt:             ts('updated_at'),
+})
+
 export const offresPg = pgTable('offres', {
   id:             id(),
   prestataireId:  uuid('prestataire_id').notNull().references(() => prestatairesPg.id, { onDelete: 'cascade' }),

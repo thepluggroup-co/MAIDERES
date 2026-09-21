@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
-import type { Prestataire, PrestataireStatut } from '@maideres/contracts'
+import type {
+  Prestataire, PrestataireStatut, PrestatairePaliersDossier, PaliersCalcules, UpdatePrestatairePaliersInput,
+} from '@maideres/contracts'
 
 export type { Prestataire, PrestataireStatut }
 
@@ -99,6 +101,31 @@ export function useUpdatePrestatairePilote() {
     onSuccess: (_, { pilote }) => {
       void qc.invalidateQueries({ queryKey: ['prestataires'] })
       toast.success(pilote ? 'Ajouté à l\u2019échantillon pilote' : 'Retiré de l\u2019échantillon pilote')
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Erreur de mise à jour'),
+  })
+}
+
+/** Dossier en 3 paliers (0035, provisoire) — staff seulement, informatif. */
+export interface PaliersReponse { dossier: PrestatairePaliersDossier | null; paliers: PaliersCalcules }
+
+export function usePrestatairePaliers(id: string | null) {
+  return useQuery({
+    queryKey: ['prestataire-paliers', id],
+    queryFn:  () => apiClient.get<{ data: PaliersReponse }>(`/api/prestataires/${id}/paliers`),
+    select:   (res) => res.data,
+    enabled:  Boolean(id),
+  })
+}
+
+export function useUpdatePrestatairePaliers(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: UpdatePrestatairePaliersInput) =>
+      apiClient.put<{ data: PaliersReponse }>(`/api/prestataires/${id}/paliers`, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['prestataire-paliers', id] })
+      toast.success('Dossier mis à jour')
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Erreur de mise à jour'),
   })

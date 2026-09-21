@@ -218,6 +218,13 @@
       "when": 1789430700000,
       "tag": "0034_prestataires_pilote",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789430800000,
+      "tag": "0035_prestataire_paliers",
+      "breakpoints": true
     }
   ]
 }

@@ -84,7 +84,7 @@ function CategoriesSection() {
           </button>
           <button
             onClick={() => { if (confirm(`Supprimer la catégorie "${row.libelle}" ?`)) deleteCategorie.mutate(row.id) }}
-            className="p-1.5 rounded-md text-destructive hover:bg-destructive/10" title="Supprimer"
+            className="p-1.5 rounded-md text-destructive-foreground hover:bg-destructive/10" title="Supprimer"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -306,7 +306,7 @@ function CommissionSection() {
           </button>
           <button
             onClick={() => { if (confirm('Supprimer cette règle de commission ?')) deleteConfig.mutate(row.id) }}
-            className="p-1.5 rounded-md text-destructive hover:bg-destructive/10" title="Supprimer"
+            className="p-1.5 rounded-md text-destructive-foreground hover:bg-destructive/10" title="Supprimer"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>

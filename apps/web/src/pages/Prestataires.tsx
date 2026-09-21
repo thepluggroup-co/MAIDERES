@@ -302,7 +302,7 @@ export default function Prestataires() {
               <Td className="cell-num">{Number(p.note_moyenne).toFixed(1)}</Td>
               <Td><CommissionCell p={p} onChanged={onChanged} /></Td>
               <Td><Chip tone={ton(STATUTS_PRESTATAIRE, p.statut)}>{libelle(STATUTS_PRESTATAIRE, p.statut)}</Chip></Td>
-              <Td>{p.pilote ? <Chip tone="bg-primary/10 text-primary border-primary/30">Pilote</Chip> : '—'}</Td>
+              <Td>{p.pilote ? <Chip tone="border-[var(--ring)]/40 bg-[var(--ring)]/15 text-[var(--ring)]">Pilote</Chip> : '—'}</Td>
               <Td><ActionsValidation p={p} onChanged={onChanged} /></Td>
               <Td>
                 <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setDetail(p.id === detail ? null : p.id)}>

@@ -2,8 +2,10 @@
  * Dossier prestataire en 3 paliers — VERSION PROVISOIRE (cf. 0035).
  *
  *  Palier 1 « matchable » : nom, téléphone, catégorie, localisation, ≥1 offre.
- *  Palier 2 « vérifié »   : pièce d'identité vue, adresse d'activité,
- *                           réalisations vues, ≥1 référence, CGU acceptées.
+ *  Palier 2 « vérifié »   : pièce d'identité (PDF déposé + vérifiée), adresse
+ *                           d'activité OU « Mobile », réalisations vues, ≥1
+ *                           référence, CGU acceptées ; + RCCM et NIU (PDF)
+ *                           si le prestataire est une entreprise.
  *  Palier 3 « paiement »  : Mobile Money, statut fiscal, commission convenue.
  *
  * Purement informatif : aucun palier ne bloque l'activation ni une mise en
@@ -14,6 +16,15 @@ import { z } from 'zod'
 
 export const IDENTITE_TYPES = ['cni', 'passeport', 'recepisse', 'niu_rccm'] as const
 export const MM_OPERATEURS = ['mtn', 'orange'] as const
+
+/** Pièces justificatives déposables en PDF (0038). */
+export const DOCUMENT_TYPES = ['identite', 'rccm', 'niu'] as const
+export type DocumentType = (typeof DOCUMENT_TYPES)[number]
+export const DocumentTypeSchema = z.enum(DOCUMENT_TYPES)
+export const DOCUMENT_MAX_BYTES = 5 * 1024 * 1024
+export const DOCUMENT_LABELS: Record<DocumentType, string> = {
+  identite: "Pièce d'identité", rccm: 'RCCM', niu: 'NIU',
+}
 
 const ReferenceContactSchema = z.object({
   nom: z.string().trim().min(1).max(100),
@@ -29,6 +40,8 @@ export const UpdatePrestatairePaliersSchema = z.object({
   identite_type: z.enum(IDENTITE_TYPES).nullable().optional(),
   identite_verifiee: z.boolean().optional(),
   adresse_activite: texteNullable(300),
+  adresse_mobile: z.boolean().optional(),
+  est_entreprise: z.boolean().optional(),
   realisations_verifiees: z.boolean().optional(),
   references_contacts: z.array(ReferenceContactSchema).max(5).optional(),
   conditions_acceptees: z.boolean().optional(),
@@ -46,6 +59,14 @@ export interface PrestatairePaliersDossier {
   identite_type: (typeof IDENTITE_TYPES)[number] | null
   identite_verifiee_at: string | null
   adresse_activite: string | null
+  adresse_mobile: boolean
+  est_entreprise: boolean
+  doc_identite_path: string | null
+  doc_identite_at: string | null
+  doc_rccm_path: string | null
+  doc_rccm_at: string | null
+  doc_niu_path: string | null
+  doc_niu_at: string | null
   realisations_verifiees: boolean
   references_contacts: ReferenceContact[]
   conditions_acceptees_at: string | null
@@ -99,8 +120,14 @@ export function calculerPaliers(
   if (nbOffres < 1) m1.push('Au moins une offre avec prix')
 
   const m2: string[] = []
-  if (!d.identite_type || !d.identite_verifiee_at) m2.push("Pièce d'identité vue")
-  if (!rempli(d.adresse_activite)) m2.push("Adresse d'activité")
+  if (!d.identite_type) m2.push("Type de pièce d'identité")
+  if (!d.doc_identite_path) m2.push("Pièce d'identité (PDF)")
+  if (!d.identite_verifiee_at) m2.push("Pièce d'identité vérifiée")
+  if (!d.adresse_mobile && !rempli(d.adresse_activite)) m2.push("Adresse d'activité (ou « Mobile »)")
+  if (d.est_entreprise) {
+    if (!d.doc_rccm_path) m2.push('RCCM (PDF)')
+    if (!d.doc_niu_path) m2.push('NIU (PDF)')
+  }
   if (!d.realisations_verifiees) m2.push('Réalisations vérifiées')
   if (!d.references_contacts?.length) m2.push('Au moins une référence')
   if (!d.conditions_acceptees_at) m2.push('Conditions acceptées')

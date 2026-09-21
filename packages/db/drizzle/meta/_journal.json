@@ -232,6 +232,20 @@
       "when": 1789430900000,
       "tag": "0036_fix_guard_prestataire_service_role",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1789431000000,
+      "tag": "0037_avis_note_moyenne",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1789431100000,
+      "tag": "0038_paliers_documents",
+      "breakpoints": true
     }
   ]
 }

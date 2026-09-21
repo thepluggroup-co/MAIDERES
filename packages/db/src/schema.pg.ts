@@ -198,6 +198,15 @@ export const prestatairePaliersPg = pgTable('prestataire_paliers', {
   mmTitulaire:           text('mm_titulaire'),
   statutFiscal:          text('statut_fiscal'),
   commissionConvenueAt:  tsN('commission_convenue_at'),
+  // 0038 — adresse « Mobile », entreprise (RCCM/NIU requis), PDF en Storage privé.
+  adresseMobile:         boolean('adresse_mobile').notNull().default(false),
+  estEntreprise:         boolean('est_entreprise').notNull().default(false),
+  docIdentitePath:       text('doc_identite_path'),
+  docIdentiteAt:         tsN('doc_identite_at'),
+  docRccmPath:           text('doc_rccm_path'),
+  docRccmAt:             tsN('doc_rccm_at'),
+  docNiuPath:            text('doc_niu_path'),
+  docNiuAt:              tsN('doc_niu_at'),
   createdAt:             ts('created_at'),
   updatedAt:             ts('updated_at'),
 })

@@ -121,10 +121,36 @@ export function createFakeSupabase() {
     return builder
   }
 
+  // Stockage d'objets en mémoire (Supabase Storage) : suffisant pour tester
+  // dépôt / URL signée / suppression sans réseau.
+  const objets = new Map<string, { octets: Uint8Array; contentType?: string }>()
+  const storage = {
+    from(bucket: string) {
+      return {
+        async upload(path: string, octets: Uint8Array, opts?: { contentType?: string; upsert?: boolean }) {
+          const cle = `${bucket}/${path}`
+          if (objets.has(cle) && !opts?.upsert) return { data: null, error: { message: 'The resource already exists' } }
+          objets.set(cle, { octets, contentType: opts?.contentType })
+          return { data: { path }, error: null }
+        },
+        async createSignedUrl(path: string, _secondes: number) {
+          if (!objets.has(`${bucket}/${path}`)) return { data: null, error: { message: 'Object not found' } }
+          return { data: { signedUrl: `https://fake.storage/${bucket}/${path}?token=test` }, error: null }
+        },
+        async remove(paths: string[]) {
+          for (const p of paths) objets.delete(`${bucket}/${p}`)
+          return { data: [], error: null }
+        },
+      }
+    },
+  }
+
   return {
     from,
     seed,
+    storage,
     dump(name: string) { return [...table(name).values()] },
+    dumpObjets() { return [...objets.keys()] },
   }
 }
 

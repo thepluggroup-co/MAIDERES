@@ -120,7 +120,11 @@ publicRouter.get('/prestataires/:id', async (c) => {
   const matchingIds = (matchingsRealises.data ?? []).map((m) => (m as { id: string }).id)
   const avis = matchingIds.length
     ? (
-        await db.from('avis').select(AVIS_PUBLIC_FIELDS).in('matching_id', matchingIds).order('created_at', { ascending: false })
+        // .eq('auteur', 'client') est CRITIQUE ici (0036) : sans ce filtre,
+        // l'avis privé prestataire→client (nouveau) apparaîtrait sur la
+        // fiche publique du prestataire, visible par n'importe qui — une
+        // fuite de données jamais voulues publiques.
+        await db.from('avis').select(AVIS_PUBLIC_FIELDS).in('matching_id', matchingIds).eq('auteur', 'client').order('created_at', { ascending: false })
       ).data ?? []
     : []
 

@@ -4,7 +4,7 @@
  */
 import {
   pgTable, uuid, text, boolean, integer, numeric, doublePrecision,
-  timestamp, pgEnum, jsonb, index,
+  timestamp, pgEnum, jsonb, index, unique,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
@@ -430,7 +430,7 @@ export type NouvelleTransactionPg = typeof transactionsPg.$inferInsert
 
 export const avisPg = pgTable('avis', {
   id:          id(),
-  matchingId:  uuid('matching_id').notNull().references(() => matchingsPg.id).unique(),
+  matchingId:  uuid('matching_id').notNull().references(() => matchingsPg.id),
   note:        integer('note').notNull(),
   commentaire: text('commentaire'),
   createdAt:   ts('created_at'),
@@ -438,7 +438,17 @@ export const avisPg = pgTable('avis', {
   // Écrite uniquement par le prestataire concerné (via son propre matching)
   // ou le staff — jamais par le client auteur de l'avis.
   reponse:     text('reponse'),
-})
+  // Avis bidirectionnel (0036) : 'client' (avis existant, sur le
+  // prestataire) ou 'prestataire' (nouveau, sur le client — jamais
+  // affiché sur la fiche publique, cf. AVIS_PUBLIC_FIELDS/public.ts et
+  // avis_select_own_client RLS). Détermine côté serveur (jamais fourni
+  // par l'appelant) dans POST /api/avis, à partir de qui appelle.
+  auteur:      text('auteur').notNull().default('client'),
+}, (table) => ({
+  // Remplace l'ancienne contrainte 1 avis/matching (avis_matching_id_unique) :
+  // un matching peut désormais avoir jusqu'à 2 avis, un par sens.
+  matchingAuteurUnique: unique('avis_matching_id_auteur_unique').on(table.matchingId, table.auteur),
+}))
 
 export type AvisPg        = typeof avisPg.$inferSelect
 export type NouvelAvisPg  = typeof avisPg.$inferInsert

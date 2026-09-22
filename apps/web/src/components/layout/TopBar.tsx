@@ -70,7 +70,7 @@ function UserDropdown({ email, displayName, onClose }: { email: string; displayN
       <div className="px-4 py-3 border-b border-border">
         <p className="text-sm font-semibold truncate">{displayName}</p>
         <p className="text-xs text-muted-foreground truncate mt-0.5">{email}</p>
-        <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary">
+        <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/15 text-primary-foreground">
           {roleLabel}
         </span>
       </div>
@@ -80,7 +80,7 @@ function UserDropdown({ email, displayName, onClose }: { email: string; displayN
           <Settings className="h-3.5 w-3.5 text-muted-foreground" /> Mon compte
         </button>
         <button onClick={handleSignOut}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors">
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/10 transition-colors">
           <LogOut className="h-3.5 w-3.5" /> Déconnexion
         </button>
       </div>
@@ -165,7 +165,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
               {i === breadcrumbs.length - 1 ? (
                 <span className="font-semibold text-foreground truncate">{crumb.label}</span>
               ) : (
-                <Link to={crumb.path} className="text-muted-foreground hover:text-primary transition-colors truncate">
+                <Link to={crumb.path} className="text-muted-foreground hover:text-[var(--ring)] transition-colors truncate">
                   {crumb.label}
                 </Link>
               )}
@@ -193,8 +193,8 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
             title={isOnline ? 'Connecté' : 'Hors ligne'}
           >
             {isOnline
-              ? <Wifi    className="h-4 w-4 text-success" />
-              : <WifiOff className="h-4 w-4 text-destructive" />}
+              ? <Wifi    className="h-4 w-4 text-success-foreground" />
+              : <WifiOff className="h-4 w-4 text-destructive-foreground" />}
           </div>
 
           {/* Notifications bell */}

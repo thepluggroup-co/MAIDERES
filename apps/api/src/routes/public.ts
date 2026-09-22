@@ -57,6 +57,21 @@ function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
   return { ...reste, metier_libelle: embed?.libelle ?? null }
 }
 
+// photo_couverture (recommandation "ressembler davantage à Uber/Bolt/FB
+// Marketplace") : la liste de recherche était jusqu'ici purement textuelle.
+// La plus récente réalisation publiée sert de vignette — aucune nouvelle
+// donnée à saisir, la galerie self-service existe déjà (0027). Même
+// remarque de typage que ci-dessus : embed FK-vers-PK, un objet à
+// l'exécution malgré le tableau que TS devine.
+type RealisationEmbed = { image_url: string } | { image_url: string }[] | null | undefined
+function aplatirPhotoCouverture<T extends { realisations?: RealisationEmbed }>(
+  row: T,
+): Omit<T, 'realisations'> & { photo_couverture: string | null } {
+  const { realisations, ...reste } = row
+  const embed = Array.isArray(realisations) ? realisations[0] : realisations
+  return { ...reste, photo_couverture: embed?.image_url ?? null }
+}
+
 // ── GET /api/public/prestataires — annuaire public, filtres ville/quartier/métier/nom ──
 // NB (0031) : `categorie_id` remplace l'ancien paramètre `categorie` (texte
 // libre) — c'est désormais l'UUID d'une ligne categories_services. Ancien
@@ -65,7 +80,12 @@ function aplatirMetier<T extends { metier_categorie?: MetierCategorieEmbed }>(
 publicRouter.get('/prestataires', async (c) => {
   const { ville, quartier, categorie_id, recherche } = c.req.query()
 
-  let query = db.from('prestataires').select(PRESTATAIRE_PUBLIC_FIELDS).eq('statut', 'actif')
+  let query = db
+    .from('prestataires')
+    .select(`${PRESTATAIRE_PUBLIC_FIELDS}, realisations(image_url)`)
+    .eq('statut', 'actif')
+    .order('created_at', { ascending: false, foreignTable: 'realisations' })
+    .limit(1, { foreignTable: 'realisations' })
   if (ville) query = query.eq('ville', ville)
   if (quartier) query = query.eq('quartier', quartier)
   if (categorie_id) query = query.eq('metier_id', categorie_id)
@@ -73,7 +93,7 @@ publicRouter.get('/prestataires', async (c) => {
 
   const { data, error } = await query.order('note_moyenne', { ascending: false }).order('nom').limit(60)
   if (error) return c.json({ error: error.message }, 500)
-  return c.json({ data: (data ?? []).map(aplatirMetier) })
+  return c.json({ data: (data ?? []).map(aplatirMetier).map(aplatirPhotoCouverture) })
 })
 
 // ── GET /api/public/prestataires/:id — fiche publique complète ───────────────
@@ -100,7 +120,11 @@ publicRouter.get('/prestataires/:id', async (c) => {
   const matchingIds = (matchingsRealises.data ?? []).map((m) => (m as { id: string }).id)
   const avis = matchingIds.length
     ? (
-        await db.from('avis').select(AVIS_PUBLIC_FIELDS).in('matching_id', matchingIds).order('created_at', { ascending: false })
+        // .eq('auteur', 'client') est CRITIQUE ici (0036) : sans ce filtre,
+        // l'avis privé prestataire→client (nouveau) apparaîtrait sur la
+        // fiche publique du prestataire, visible par n'importe qui — une
+        // fuite de données jamais voulues publiques.
+        await db.from('avis').select(AVIS_PUBLIC_FIELDS).in('matching_id', matchingIds).eq('auteur', 'client').order('created_at', { ascending: false })
       ).data ?? []
     : []
 
@@ -145,4 +169,36 @@ publicRouter.get('/promotions', async (c) => {
 
   if (error) return c.json({ error: error.message }, 500)
   return c.json({ data })
+})
+
+// ── GET /api/public/tarifs-indicatifs — fourchette de prix indicative ────────
+// Recommandation "transparence tarifaire" (comparatif Uber/Bolt/FB
+// Marketplace, 17/09/2026) : donner un ordre de grandeur avant la 1ère
+// demande, sur le parcours générique.
+//
+// Volontairement GLOBALE, pas par catégorie : offres.categorie est un texte
+// libre choisi par chaque prestataire (pas de FK vers categories_services,
+// cf. le commentaire du schéma) — rapprocher ce texte des catégories
+// formelles du tunnel de demande serait un rapprochement approximatif, donc
+// un chiffre potentiellement faux affiché comme une donnée fiable. Une
+// fourchette globale, elle, reste exacte.
+//
+// p10/p90 plutôt que min/max brut : une seule offre exceptionnelle (très
+// chère ou promotionnelle à prix cassé) ne doit pas fausser l'affichage.
+// Sous 3 offres publiées au total, on ne renvoie rien plutôt qu'une
+// fourchette basée sur un échantillon trop faible pour être honnête.
+publicRouter.get('/tarifs-indicatifs', async (c) => {
+  const { data: actifs, error: errActifs } = await db.from('prestataires').select('id').eq('statut', 'actif')
+  if (errActifs) return c.json({ error: errActifs.message }, 500)
+  const ids = (actifs ?? []).map((p) => (p as { id: string }).id)
+  if (ids.length === 0) return c.json({ data: null })
+
+  const { data, error } = await db.from('offres').select('prix').eq('publie', true).in('prestataire_id', ids)
+  if (error) return c.json({ error: error.message }, 500)
+
+  const prix = (data ?? []).map((o) => (o as { prix: number }).prix).sort((a, b) => a - b)
+  if (prix.length < 3) return c.json({ data: null })
+
+  const percentile = (p: number) => prix[Math.floor((prix.length - 1) * p)]
+  return c.json({ data: { min: percentile(0.1), max: percentile(0.9), echantillon: prix.length } })
 })

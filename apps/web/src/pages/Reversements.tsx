@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { ModuleHeader, Kpi, Table, Td, Vide, Chip } from '@/components/erp'
+import { ModuleHeader, Kpi, Table, Td, Vide, Chip, TONE } from '@/components/erp'
 import { Sel } from '@/components/erp-form'
 import { Button } from '@/components/ui/button'
 import { useReversements, useMarquerReversementPaye } from '@/hooks/useReversements'
@@ -13,9 +13,9 @@ import { useTransactions } from '@/hooks/useTransactions'
 // ── Libellés & tons ────────────────────────────────────────────────────────────
 
 const TONS: Record<ReversementStatut, string> = {
-  en_attente: 'bg-warning/15 text-warning-foreground border-warning/40',
-  traite:     'bg-success/12 text-success border-success/30',
-  echoue:     'bg-destructive/12 text-destructive border-destructive/30',
+  en_attente: TONE.attente,
+  traite:     TONE.succes,
+  echoue:     TONE.litige,
 }
 const LABELS: Record<ReversementStatut, string> = { en_attente: 'Dû', traite: 'Payé', echoue: 'Échoué' }
 
@@ -156,6 +156,7 @@ export default function Reversements() {
                     {r.statut === 'en_attente' && (
                       <Button
                         size="sm"
+                        variant="outline"
                         disabled={marquerPaye.isPending || c.montantNet === null}
                         onClick={() => marquerPaye.mutate(r.id)}
                       >

@@ -4,7 +4,7 @@
  */
 import {
   pgTable, uuid, text, boolean, integer, numeric, doublePrecision,
-  timestamp, pgEnum, jsonb, index,
+  timestamp, pgEnum, jsonb, index, unique,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
@@ -155,6 +155,10 @@ export const prestatairesPg = pgTable('prestataires', {
   bio:              text('bio'),
   disponible:       boolean('disponible').notNull().default(true),
   zonesCouverture:  text('zones_couverture').array().notNull().default(sql`ARRAY[]::text[]`),
+  // pilote (0034) : marque un prestataire comme appartenant à l'échantillon
+  // de référence de la phase pilote — jamais réglable en self-service,
+  // uniquement par le staff (cf. PATCH /prestataires/:id/pilote).
+  pilote:           boolean('pilote').notNull().default(false),
 }, (table) => ({
   // GIN : categories est un uuid[] filtré par "contains" (@>) au dispatch —
   // un btree standard ne sait pas indexer un opérateur sur tableau.
@@ -176,6 +180,36 @@ export type NouveauPrestatairePg = typeof prestatairesPg.$inferInsert
 // ne voit jamais les offres d'un prestataire dont statut != 'actif', même
 // si publie=true (cf. filtre appliqué par /api/public/prestataires).
 // ══════════════════════════════════════════════════════════════════════════════
+
+// 0035 — dossier prestataire en 3 paliers (provisoire, staff seulement).
+// Aucun numéro de pièce ni photo stockés : type de pièce + date de vérif.
+export const prestatairePaliersPg = pgTable('prestataire_paliers', {
+  prestataireId:         uuid('prestataire_id').primaryKey().references(() => prestatairesPg.id, { onDelete: 'cascade' }),
+  identiteType:          text('identite_type'),
+  identiteVerifieeAt:    tsN('identite_verifiee_at'),
+  adresseActivite:       text('adresse_activite'),
+  realisationsVerifiees: boolean('realisations_verifiees').notNull().default(false),
+  referencesContacts:    jsonb('references_contacts').notNull().default(sql`'[]'::jsonb`),
+  conditionsAcceptees:   tsN('conditions_acceptees_at'),
+  verifiePar:            uuid('verifie_par').references(() => profilesPg.id, { onDelete: 'set null' }),
+  verifieAt:             tsN('verifie_at'),
+  mmOperateur:           text('mm_operateur'),
+  mmNumero:              text('mm_numero'),
+  mmTitulaire:           text('mm_titulaire'),
+  statutFiscal:          text('statut_fiscal'),
+  commissionConvenueAt:  tsN('commission_convenue_at'),
+  // 0038 — adresse « Mobile », entreprise (RCCM/NIU requis), PDF en Storage privé.
+  adresseMobile:         boolean('adresse_mobile').notNull().default(false),
+  estEntreprise:         boolean('est_entreprise').notNull().default(false),
+  docIdentitePath:       text('doc_identite_path'),
+  docIdentiteAt:         tsN('doc_identite_at'),
+  docRccmPath:           text('doc_rccm_path'),
+  docRccmAt:             tsN('doc_rccm_at'),
+  docNiuPath:            text('doc_niu_path'),
+  docNiuAt:              tsN('doc_niu_at'),
+  createdAt:             ts('created_at'),
+  updatedAt:             ts('updated_at'),
+})
 
 export const offresPg = pgTable('offres', {
   id:             id(),
@@ -281,10 +315,17 @@ export const demandesPg = pgTable('demandes', {
   niveauUrgence: niveauUrgenceEnum('niveau_urgence').notNull().default('urgent'),
   dateSouhaitee: tsN('date_souhaitee'),
   delaiCible:    tsN('delai_cible'),
+  // offreId (0033) : présent quand le client a créé la demande depuis une
+  // offre précise sur la fiche publique d'un prestataire — dans ce cas
+  // l'API crée aussi automatiquement le matching vers ce prestataire (cf.
+  // apps/api/src/routes/demandes.ts, POST /), sans dispatch staff manuel.
+  // Nul pour le parcours générique (le staff choisit le prestataire).
+  offreId:      uuid('offre_id').references(() => offresPg.id, { onDelete: 'set null' }),
 }, (table) => ({
   categorieIdx: index('demandes_categorie_id_idx').on(table.categorieId),
   statutIdx:    index('demandes_statut_idx').on(table.statut),
   delaiCibleIdx: index('demandes_delai_cible_idx').on(table.delaiCible),
+  offreIdx:     index('demandes_offre_id_idx').on(table.offreId),
 }))
 
 export type DemandePg        = typeof demandesPg.$inferSelect
@@ -398,7 +439,7 @@ export type NouvelleTransactionPg = typeof transactionsPg.$inferInsert
 
 export const avisPg = pgTable('avis', {
   id:          id(),
-  matchingId:  uuid('matching_id').notNull().references(() => matchingsPg.id).unique(),
+  matchingId:  uuid('matching_id').notNull().references(() => matchingsPg.id),
   note:        integer('note').notNull(),
   commentaire: text('commentaire'),
   createdAt:   ts('created_at'),
@@ -406,7 +447,17 @@ export const avisPg = pgTable('avis', {
   // Écrite uniquement par le prestataire concerné (via son propre matching)
   // ou le staff — jamais par le client auteur de l'avis.
   reponse:     text('reponse'),
-})
+  // Avis bidirectionnel (0036) : 'client' (avis existant, sur le
+  // prestataire) ou 'prestataire' (nouveau, sur le client — jamais
+  // affiché sur la fiche publique, cf. AVIS_PUBLIC_FIELDS/public.ts et
+  // avis_select_own_client RLS). Détermine côté serveur (jamais fourni
+  // par l'appelant) dans POST /api/avis, à partir de qui appelle.
+  auteur:      text('auteur').notNull().default('client'),
+}, (table) => ({
+  // Remplace l'ancienne contrainte 1 avis/matching (avis_matching_id_unique) :
+  // un matching peut désormais avoir jusqu'à 2 avis, un par sens.
+  matchingAuteurUnique: unique('avis_matching_id_auteur_unique').on(table.matchingId, table.auteur),
+}))
 
 export type AvisPg        = typeof avisPg.$inferSelect
 export type NouvelAvisPg  = typeof avisPg.$inferInsert

@@ -43,8 +43,8 @@ export function Kpi({
       <p
         className={cn(
           'cell-num mt-1.5 text-2xl font-bold',
-          ton === 'alerte' && 'text-destructive',
-          ton === 'succes' && 'text-success',
+          ton === 'alerte' && 'text-destructive-foreground',
+          ton === 'succes' && 'text-success-foreground',
         )}
       >
         {valeur}
@@ -66,6 +66,29 @@ export function Chip({ children, tone }: { children: ReactNode; tone: string }) 
     </span>
   )
 }
+
+/**
+ * Tons canoniques pour les Chips de statut — remplace les tableaux
+ * dupliqués et incorrects de Dashboard.tsx / Dispatch.tsx / Prestataires.tsx.
+ *
+ * Deux bugs corrigés par rapport aux tons précédents (tous les chips sauf
+ * les "warning" en souffraient) :
+ *  1. `text-info`/`text-success`/`text-destructive` pointent vers la
+ *     teinte PÂLE de fond (ex. --info: #E6F1FB), pas vers sa version
+ *     foncée lisible — texte quasi invisible sur fond clair. Corrigé en
+ *     utilisant systématiquement `-foreground`.
+ *  2. `bg-X/10` à `/15` appliquait une opacité sur des couleurs déjà
+ *     pâles par design (ce sont les fonds de la charte, pas des couleurs
+ *     de base à diluer) — fond quasi invisible. Corrigé en utilisant la
+ *     teinte à pleine opacité (elle est déjà claire, la charte le prévoit).
+ */
+export const TONE = {
+  succes: 'bg-success text-success-foreground border-success-foreground/25',
+  attente: 'bg-warning text-warning-foreground border-warning-foreground/25',
+  cours: 'bg-info text-info-foreground border-info-foreground/25',
+  litige: 'bg-destructive text-destructive-foreground border-destructive-foreground/25',
+  neutre: 'bg-muted text-muted-foreground border-border',
+} as const
 
 export function Table({ head, children }: { head: string[]; children: ReactNode }) {
   return (

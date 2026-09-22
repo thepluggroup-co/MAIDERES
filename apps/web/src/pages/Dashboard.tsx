@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ModuleHeader, Kpi, Section, Table, Td, Vide, Chip } from '@/components/erp'
+import { ModuleHeader, Kpi, Section, Table, Td, Vide, Chip, TONE } from '@/components/erp'
 import { useDemandes } from '@/hooks/useDemandes'
 import type { Demande, DemandeStatut, NiveauUrgence } from '@/hooks/useDemandes'
 import { useMatchings } from '@/hooks/useMatchings'
@@ -14,18 +14,18 @@ import { useTransactions } from '@/hooks/useTransactions'
 //    Demandes.tsx, Dispatch.tsx, Interventions.tsx — pas de lib partagée) ────
 
 const STATUTS_DEMANDE: { value: DemandeStatut; label: string; tone: string }[] = [
-  { value: 'nouvelle',      label: 'Nouvelle',      tone: 'bg-info/12 text-info border-info/30' },
-  { value: 'en_traitement', label: 'En traitement', tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
-  { value: 'matchee',       label: 'Matchée',       tone: 'bg-primary/10 text-primary border-primary/25' },
-  { value: 'en_cours',      label: 'Intervention en cours', tone: 'bg-primary/10 text-primary border-primary/25' },
-  { value: 'realisee',      label: 'Réalisée',      tone: 'bg-success/12 text-success border-success/30' },
-  { value: 'annulee',       label: 'Annulée',       tone: 'bg-muted text-muted-foreground border-border' },
+  { value: 'nouvelle',      label: 'Nouvelle',      tone: TONE.attente },
+  { value: 'en_traitement', label: 'En traitement', tone: TONE.cours },
+  { value: 'matchee',       label: 'Matchée',       tone: TONE.cours },
+  { value: 'en_cours',      label: 'Intervention en cours', tone: TONE.cours },
+  { value: 'realisee',      label: 'Réalisée',      tone: TONE.succes },
+  { value: 'annulee',       label: 'Annulée',       tone: TONE.neutre },
 ]
 
 const URGENCES: { value: NiveauUrgence; label: string; tone: string; poids: number }[] = [
-  { value: 'immediate', label: 'Immédiate', tone: 'bg-destructive/12 text-destructive border-destructive/30', poids: 0 },
-  { value: 'urgent',    label: 'Urgent',    tone: 'bg-warning/15 text-warning-foreground border-warning/40', poids: 1 },
-  { value: 'planifie',  label: 'Planifié',  tone: 'bg-info/12 text-info border-info/30', poids: 2 },
+  { value: 'immediate', label: 'Immédiate', tone: TONE.litige, poids: 0 },
+  { value: 'urgent',    label: 'Urgent',    tone: TONE.attente, poids: 1 },
+  { value: 'planifie',  label: 'Planifié',  tone: TONE.cours, poids: 2 },
 ]
 
 const libelle = (list: { value: string; label: string }[], v: string | null | undefined) =>
@@ -206,7 +206,7 @@ export default function Dashboard() {
       <Section
         titre="File prioritaire"
         actions={
-          <Link to="/dispatch" className="text-xs font-semibold text-primary hover:underline">
+          <Link to="/dispatch" className="text-xs font-semibold text-[var(--ring)] hover:underline">
             Ouvrir le dispatch
           </Link>
         }
@@ -220,7 +220,7 @@ export default function Dashboard() {
                 <Td className="cell-num font-semibold">{d.id.slice(0, 8).toUpperCase()}</Td>
                 <Td><Chip tone={ton(URGENCES, d.niveau_urgence)}>{libelle(URGENCES, d.niveau_urgence)}</Chip></Td>
                 <Td><Chip tone={ton(STATUTS_DEMANDE, d.statut)}>{libelle(STATUTS_DEMANDE, d.statut)}</Chip></Td>
-                <Td className={enRetard(d) ? 'font-semibold text-destructive' : ''}>{resteAvantDelai(d.delai_cible)}</Td>
+                <Td className={enRetard(d) ? 'font-semibold text-destructive-foreground' : ''}>{resteAvantDelai(d.delai_cible)}</Td>
                 <Td className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleString('fr-FR')}</Td>
               </tr>
             ))

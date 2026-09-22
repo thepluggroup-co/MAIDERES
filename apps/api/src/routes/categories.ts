@@ -65,15 +65,31 @@ categoriesRouter.patch('/:id', requireRole(['admin']), zValidator('json', Update
 })
 
 // ── DELETE /api/categories_services/:id — admin uniquement ───────────────────
-// Bloqué si des demandes référencent encore cette catégorie (FK RESTRICT en
-// base) : mieux vaut désactiver (actif=false) via PATCH que supprimer.
+// Bloqué si des demandes, règles de commission ou métiers de prestataires
+// référencent encore cette catégorie (FK RESTRICT en base) : mieux vaut désactiver (actif=false) via PATCH que supprimer.
 categoriesRouter.delete('/:id', requireRole(['admin']), async (c) => {
   const id = c.req.param('id')
 
   const { error } = await db.from('categories_services').delete().eq('id', id)
   if (error) {
     if (error.code === '23503') {
-      throw new HTTPException(409, { message: 'Catégorie utilisée par des demandes existantes — désactivez-la plutôt que de la supprimer' })
+      // La FK peut venir de plusieurs tables (demandes, règles de commission,
+      // métier d'un prestataire) : on dit précisément laquelle bloque, plutôt
+      // que d'accuser toujours les demandes.
+      const sources: [string, string, string][] = [
+        ['demandes', 'categorie_id', 'demande(s)'],
+        ['commission_config', 'categorie_id', 'règle(s) de commission'],
+        ['prestataires', 'metier_id', 'prestataire(s) (métier)'],
+      ]
+      const blocages: string[] = []
+      for (const [table, col, label] of sources) {
+        const { count } = await db.from(table).select('id', { count: 'exact', head: true }).eq(col, id)
+        if (count) blocages.push(`${count} ${label}`)
+      }
+      const detail = blocages.length ? ` : ${blocages.join(', ')}` : ''
+      throw new HTTPException(409, {
+        message: `Catégorie encore utilisée${detail} — désactivez-la plutôt que de la supprimer, ou détachez d'abord ces éléments`,
+      })
     }
     return c.json({ error: error.message }, 500)
   }

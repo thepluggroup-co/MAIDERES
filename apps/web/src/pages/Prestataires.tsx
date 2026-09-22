@@ -1,21 +1,22 @@
 import React, { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { ModuleHeader, Section, Table, Td, Vide, Kpi, Chip } from '@/components/erp'
+import { ModuleHeader, Section, Table, Td, Vide, Kpi, Chip, TONE } from '@/components/erp'
 import { Champ, Txt, Sel } from '@/components/erp-form'
 import { Button } from '@/components/ui/button'
 import {
-  usePrestataires, useCreatePrestataire, useUpdatePrestataire, useUpdatePrestataireStatut,
+  usePrestataires, useCreatePrestataire, useUpdatePrestataire, useUpdatePrestataireStatut, useUpdatePrestatairePilote,
 } from '@/hooks/usePrestataires'
 import type { Prestataire, PrestataireStatut } from '@/hooks/usePrestataires'
+import { PaliersPanel } from '@/components/PaliersPanel'
 import { useCategories } from '@/hooks/useCategories'
 import { useCommissionConfig } from '@/hooks/useCommissionConfig'
 
 // ── Libellés & tons (adaptés au schéma backend : 3 statuts, pas de "vérifié") ──
 
 const STATUTS_PRESTATAIRE: { value: PrestataireStatut; label: string; tone: string }[] = [
-  { value: 'en_attente', label: 'En attente', tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
-  { value: 'actif',      label: 'Actif',      tone: 'bg-success/12 text-success border-success/30' },
-  { value: 'suspendu',   label: 'Suspendu',   tone: 'bg-destructive/12 text-destructive border-destructive/30' },
+  { value: 'en_attente', label: 'En attente', tone: TONE.attente },
+  { value: 'actif',      label: 'Actif',      tone: TONE.succes },
+  { value: 'suspendu',   label: 'Suspendu',   tone: TONE.litige },
 ]
 
 const libelle = (list: { value: string; label: string }[], v: string | null | undefined) =>
@@ -130,7 +131,7 @@ function ActionsValidation({ p, onChanged }: { p: Prestataire; onChanged: () => 
   return (
     <div className="flex flex-wrap gap-1.5">
       {suivant && (
-        <Button size="sm" className="h-8 text-xs" onClick={() => set(suivant.cible)}>
+        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => set(suivant.cible)}>
           {suivant.label}
         </Button>
       )}
@@ -140,6 +141,23 @@ function ActionsValidation({ p, onChanged }: { p: Prestataire; onChanged: () => 
         </Button>
       )}
     </div>
+  )
+}
+
+// ── Marquage de l'échantillon pilote (0034) — orthogonal au statut ──────────
+
+function ActionPilote({ p, onChanged }: { p: Prestataire; onChanged: () => void }) {
+  const updatePilote = useUpdatePrestatairePilote()
+  return (
+    <Button
+      size="sm"
+      variant={p.pilote ? 'outline' : 'ghost'}
+      className="h-8 text-xs"
+      disabled={updatePilote.isPending}
+      onClick={() => updatePilote.mutate({ id: p.id, pilote: !p.pilote }, { onSuccess: onChanged })}
+    >
+      {p.pilote ? 'Retirer du pilote' : 'Ajouter au pilote'}
+    </Button>
   )
 }
 
@@ -169,7 +187,7 @@ function CommissionCell({ p, onChanged }: { p: Prestataire; onChanged: () => voi
       <div className="flex items-center gap-1.5">
         <span>{affichee}</span>
         <button type="button" title="Modifier la commission" onClick={() => { setValeur(p.taux_commission ?? ''); setEdition(true) }}
-          className="text-[11px] font-medium text-primary hover:underline">
+          className="text-[11px] font-medium text-[var(--ring)] hover:underline">
           modifier
         </button>
       </div>
@@ -184,7 +202,7 @@ function CommissionCell({ p, onChanged }: { p: Prestataire; onChanged: () => voi
         placeholder="défaut"
         className="h-8 w-20 rounded-md border border-input bg-background px-2 text-sm"
       />
-      <Button size="sm" className="h-8 text-xs" onClick={async () => {
+      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={async () => {
         await update.mutateAsync({ id: p.id, taux_commission: valeur === '' ? null : Number(valeur) })
         setEdition(false)
         onChanged()
@@ -204,6 +222,7 @@ export default function Prestataires() {
   const [categorieFilter, setCategorieFilter] = useState('tous')
   const [quartierFilter, setQuartierFilter] = useState('tous')
   const [statutFilter, setStatutFilter] = useState<'tous' | PrestataireStatut>('tous')
+  const [piloteFilter, setPiloteFilter] = useState(false)
   const [recherche, setRecherche] = useState('')
   const [detail, setDetail] = useState<string | null>(null)
   const [, bump] = useState(0)
@@ -214,6 +233,7 @@ export default function Prestataires() {
     categorie: categorieFilter === 'tous' ? undefined : categorieFilter,
     quartier:  quartierFilter === 'tous' ? undefined : quartierFilter,
     statut:    statutFilter === 'tous' ? undefined : statutFilter,
+    pilote:    piloteFilter ? true : undefined,
   })
 
   const catLabel = useMemo(() => new Map(categories.map((c) => [c.id, c.libelle])), [categories])
@@ -222,6 +242,7 @@ export default function Prestataires() {
     [prestataires],
   )
   const compte = (s: PrestataireStatut) => prestataires.filter((p) => p.statut === s).length
+  const comptePilote = prestataires.filter((p) => p.pilote).length
 
   const liste = useMemo(() => {
     const q = recherche.trim().toLowerCase()
@@ -241,7 +262,7 @@ export default function Prestataires() {
         <Kpi label="En attente" valeur={String(compte('en_attente'))} detail="À valider" ton="alerte" />
         <Kpi label="Actifs" valeur={String(compte('actif'))} ton="succes" />
         <Kpi label="Suspendus" valeur={String(compte('suspendu'))} detail="Hors réseau" />
-        <Kpi label="Total" valeur={String(prestataires.length)} />
+        <Kpi label="Pilote" valeur={String(comptePilote)} detail="Échantillon de référence" />
       </div>
 
       <Section titre="Enregistrer un prestataire">
@@ -260,15 +281,19 @@ export default function Prestataires() {
             {quartiers.map((q) => <option key={q} value={q}>{q}</option>)}
           </Sel>
         </div>
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <Sel value={statutFilter} onChange={(e) => setStatutFilter(e.target.value as 'tous' | PrestataireStatut)} className="w-full sm:w-64">
             <option value="tous">Tous les statuts</option>
             {STATUTS_PRESTATAIRE.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </Sel>
+          <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <input type="checkbox" checked={piloteFilter} onChange={(e) => setPiloteFilter(e.target.checked)} />
+            Échantillon pilote uniquement
+          </label>
         </div>
 
-        <Table head={['Nom', 'Métiers', 'Contact', 'Quartier', 'Note', 'Commission', 'Statut', 'Validation', '']}>
-          {isLoading && <Vide texte="Chargement…" colSpan={9} />}
+        <Table head={['Nom', 'Métiers', 'Contact', 'Quartier', 'Note', 'Commission', 'Statut', 'Pilote', 'Validation', '']}>
+          {isLoading && <Vide texte="Chargement…" colSpan={10} />}
           {!isLoading && liste.map((p) => (
             <tr key={p.id}>
               <Td className="font-medium">{p.nom}</Td>
@@ -278,6 +303,7 @@ export default function Prestataires() {
               <Td className="cell-num">{Number(p.note_moyenne).toFixed(1)}</Td>
               <Td><CommissionCell p={p} onChanged={onChanged} /></Td>
               <Td><Chip tone={ton(STATUTS_PRESTATAIRE, p.statut)}>{libelle(STATUTS_PRESTATAIRE, p.statut)}</Chip></Td>
+              <Td>{p.pilote ? <Chip tone="border-[var(--ring)]/40 bg-[var(--ring)]/15 text-[var(--ring)]">Pilote</Chip> : '—'}</Td>
               <Td><ActionsValidation p={p} onChanged={onChanged} /></Td>
               <Td>
                 <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setDetail(p.id === detail ? null : p.id)}>
@@ -286,7 +312,7 @@ export default function Prestataires() {
               </Td>
             </tr>
           ))}
-          {!isLoading && liste.length === 0 && <Vide texte="Aucun prestataire." colSpan={9} />}
+          {!isLoading && liste.length === 0 && <Vide texte="Aucun prestataire." colSpan={10} />}
         </Table>
       </Section>
 
@@ -303,6 +329,7 @@ export default function Prestataires() {
               ['Coordonnées', fiche.geoloc_lat !== null && fiche.geoloc_lng !== null ? `${fiche.geoloc_lat.toFixed(4)}, ${fiche.geoloc_lng.toFixed(4)}` : 'à géolocaliser'],
               ['Note moyenne', `${Number(fiche.note_moyenne).toFixed(1)} / 5`],
               ['Statut', libelle(STATUTS_PRESTATAIRE, fiche.statut)],
+              ['Échantillon pilote', fiche.pilote ? 'Oui' : 'Non'],
             ].map(([k, v]) => (
               <div key={k} className="min-w-0">
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{k}</dt>
@@ -316,7 +343,9 @@ export default function Prestataires() {
           </dl>
           <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border pt-3">
             <ActionsValidation p={fiche} onChanged={onChanged} />
+            <ActionPilote p={fiche} onChanged={onChanged} />
           </div>
+          <PaliersPanel prestataireId={fiche.id} />
         </Section>
       )}
     </div>

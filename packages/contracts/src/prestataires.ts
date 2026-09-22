@@ -24,6 +24,9 @@ export const PrestataireSchema = z.object({
   bio: z.string().nullable().optional(),
   disponible: z.boolean().optional(),
   zones_couverture: z.array(z.string()).optional(),
+  // pilote (0034) : jamais dans Create/Update self-service — uniquement via
+  // PATCH /prestataires/:id/pilote (staff), cf. UpdatePrestatairePiloteSchema.
+  pilote: z.boolean().optional(),
 })
 export type Prestataire = z.infer<typeof PrestataireSchema>
 
@@ -63,6 +66,13 @@ export type UpdatePrestataireInput = z.infer<typeof UpdatePrestataireSchema>
 
 export const UpdatePrestataireStatutSchema = z.object({ statut: PrestataireStatutSchema })
 export type UpdatePrestataireStatutInput = z.infer<typeof UpdatePrestataireStatutSchema>
+
+/** PATCH /api/prestataires/:id/pilote — staff seulement. Marque/démarque
+ *  l'appartenance à l'échantillon de référence du pilote (cf. docs/
+ *  integration/12-NIVEAU-2-PROCESSUS-ET-GOUVERNANCE.md §6) — orthogonal au
+ *  statut (en_attente/actif/suspendu), jamais réglable en self-service. */
+export const UpdatePrestatairePiloteSchema = z.object({ pilote: z.boolean() })
+export type UpdatePrestatairePiloteInput = z.infer<typeof UpdatePrestatairePiloteSchema>
 
 /** Champs exposés côté vitrine publique (GET /api/public/prestataires*) — jamais profile_id/geoloc/categories/taux_commission. */
 export const PrestatairePublicSchema = z.object({

@@ -29,6 +29,11 @@ export const CreateDemandeSchema = z.object({
   canal: DemandeCanalSchema.default('web'),
   niveau_urgence: NiveauUrgenceSchema.default('urgent'),
   date_souhaitee: z.string().datetime().nullable().optional(),
+  // Sélection directe d'une offre sur la fiche publique d'un prestataire —
+  // cf. POST /api/demandes (apps/api/src/routes/demandes.ts) : simple
+  // préférence conservée sur la demande ; aucun matching automatique, le
+  // staff MAIDERES valide et dispatche.
+  offre_id: z.string().uuid().nullable().optional(),
 }).refine(
   (body) => body.niveau_urgence !== 'planifie' || Boolean(body.date_souhaitee),
   { message: 'date_souhaitee est requise pour une demande planifiée', path: ['date_souhaitee'] },

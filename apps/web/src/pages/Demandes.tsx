@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { StatusMap } from '@maideres/ui'
 import { UserPlus } from 'lucide-react'
-import { ModuleHeader, Section, Table, Td, Vide, Chip } from '@/components/erp'
+import { ModuleHeader, Section, Table, Td, Vide, Chip, TONE } from '@/components/erp'
 import { Champ, Sel, Txt } from '@/components/erp-form'
 import { Button } from '@/components/ui/button'
 import { useDemandes, useCreateDemande } from '@/hooks/useDemandes'
@@ -30,18 +30,18 @@ export const DEMANDE_STATUS_MAP: StatusMap = {
 }
 
 const STATUTS_DEMANDE: { value: DemandeStatut; label: string; tone: string }[] = [
-  { value: 'nouvelle',      label: 'Nouvelle',      tone: 'bg-info/12 text-info border-info/30' },
-  { value: 'en_traitement', label: 'En traitement', tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
-  { value: 'matchee',       label: 'Matchée',       tone: 'bg-primary/10 text-primary border-primary/25' },
-  { value: 'en_cours',      label: 'Intervention en cours', tone: 'bg-primary/10 text-primary border-primary/25' },
-  { value: 'realisee',      label: 'Réalisée',      tone: 'bg-success/12 text-success border-success/30' },
-  { value: 'annulee',       label: 'Annulée',       tone: 'bg-muted text-muted-foreground border-border' },
+  { value: 'nouvelle',      label: 'Nouvelle',      tone: TONE.attente },
+  { value: 'en_traitement', label: 'En traitement', tone: TONE.cours },
+  { value: 'matchee',       label: 'Matchée',       tone: TONE.cours },
+  { value: 'en_cours',      label: 'Intervention en cours', tone: TONE.cours },
+  { value: 'realisee',      label: 'Réalisée',      tone: TONE.succes },
+  { value: 'annulee',       label: 'Annulée',       tone: TONE.neutre },
 ]
 
 const URGENCES: { value: NiveauUrgence; label: string; tone: string }[] = [
-  { value: 'immediate', label: 'Immédiate', tone: 'bg-destructive/12 text-destructive border-destructive/30' },
-  { value: 'urgent',    label: 'Urgent',    tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
-  { value: 'planifie',  label: 'Planifié',  tone: 'bg-info/12 text-info border-info/30' },
+  { value: 'immediate', label: 'Immédiate', tone: TONE.litige },
+  { value: 'urgent',    label: 'Urgent',    tone: TONE.attente },
+  { value: 'planifie',  label: 'Planifié',  tone: TONE.cours },
 ]
 
 const CANAL_LABELS: Record<DemandeCanal, string> = { web: 'Web', whatsapp: 'WhatsApp', manuel: 'Manuel' }
@@ -164,7 +164,7 @@ function QuickCreateForm({ onChanged }: { onChanged: () => void }) {
           <button
             type="button"
             onClick={() => setNewClient((v) => !v)}
-            className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+            className="flex items-center gap-1 text-[11px] font-medium text-[var(--ring)] hover:underline"
           >
             <UserPlus className="h-3 w-3" /> {newClient ? 'Choisir un client existant' : 'Nouveau client'}
           </button>
@@ -351,7 +351,7 @@ export default function Demandes() {
                   <span className="block max-w-xs truncate text-xs text-muted-foreground">{d.description}</span>
                 </Td>
                 <Td><Chip tone={ton(URGENCES, d.niveau_urgence)}>{libelle(URGENCES, d.niveau_urgence)}</Chip></Td>
-                <Td className={retard ? 'font-semibold text-destructive' : ''}>{resteAvantDelai(d.delai_cible)}</Td>
+                <Td className={retard ? 'font-semibold text-destructive-foreground' : ''}>{resteAvantDelai(d.delai_cible)}</Td>
                 <Td className="text-muted-foreground">{CANAL_LABELS[d.canal]}</Td>
                 <Td><Chip tone={ton(STATUTS_DEMANDE, d.statut)}>{libelle(STATUTS_DEMANDE, d.statut)}</Chip></Td>
                 <Td className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleString('fr-FR')}</Td>

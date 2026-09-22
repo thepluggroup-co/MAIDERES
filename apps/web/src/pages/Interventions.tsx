@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle, Clock3, LogIn, LogOut, CalendarClock } from 'lucide-react'
-import { Chip } from '@/components/erp'
+import { Chip, TONE } from '@/components/erp'
 import { Txt } from '@/components/erp-form'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,14 +30,14 @@ const COLONNES: { statut: StatutIntervention; label: string }[] = [
 ]
 
 const STATUTS_INTERVENTION: { value: StatutIntervention; label: string; tone: string }[] = [
-  { value: 'planifiee', label: 'Planifiée', tone: 'bg-info/12 text-info border-info/30' },
-  { value: 'en_route',  label: 'En route',  tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
-  { value: 'sur_site',  label: 'Sur site',  tone: 'bg-warning/15 text-warning-foreground border-warning/40' },
-  { value: 'en_cours',  label: 'En cours',  tone: 'bg-primary/10 text-primary border-primary/25' },
-  { value: 'realisee',  label: 'Réalisée',  tone: 'bg-success/12 text-success border-success/30' },
-  { value: 'echouee',   label: 'Échouée',   tone: 'bg-destructive/12 text-destructive border-destructive/30' },
-  { value: 'reportee',  label: 'Reportée',  tone: 'bg-muted text-muted-foreground border-border' },
-  { value: 'annulee',   label: 'Annulée',   tone: 'bg-muted text-muted-foreground border-border' },
+  { value: 'planifiee', label: 'Planifiée', tone: TONE.attente },
+  { value: 'en_route',  label: 'En route',  tone: TONE.cours },
+  { value: 'sur_site',  label: 'Sur site',  tone: TONE.cours },
+  { value: 'en_cours',  label: 'En cours',  tone: TONE.cours },
+  { value: 'realisee',  label: 'Réalisée',  tone: TONE.succes },
+  { value: 'echouee',   label: 'Échouée',   tone: TONE.litige },
+  { value: 'reportee',  label: 'Reportée',  tone: TONE.neutre },
+  { value: 'annulee',   label: 'Annulée',   tone: TONE.neutre },
 ]
 
 const URGENCES: { value: NiveauUrgence; label: string; poids: number }[] = [
@@ -74,9 +74,9 @@ function resteAvantDelai(delai: string | null | undefined): string {
 type EtatSla = 'retard' | 'alerte' | 'ok'
 
 const SLA_TONE: Record<EtatSla, string> = {
-  retard: 'bg-destructive/12 text-destructive border-destructive/30',
-  alerte: 'bg-warning/15 text-warning-foreground border-warning/40',
-  ok:     'bg-success/12 text-success border-success/30',
+  retard: TONE.litige,
+  alerte: TONE.attente,
+  ok:     TONE.succes,
 }
 const SLA_LABEL: Record<EtatSla, string> = { retard: 'En retard', alerte: 'À risque', ok: 'Dans les temps' }
 const SLA_POIDS: Record<EtatSla, number> = { retard: 0, alerte: 1, ok: 2 }
@@ -189,11 +189,11 @@ function DetailIntervention({ intervention }: { intervention: Intervention }) {
           <p className="text-xs font-medium text-muted-foreground">Clôturer la mission</p>
           <div className="flex gap-2">
             <button type="button" onClick={() => setIssue('realise')}
-              className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-medium ${issue === 'realise' ? 'border-success bg-success/10 text-success' : 'border-input text-muted-foreground'}`}>
+              className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-medium ${issue === 'realise' ? 'border-success-foreground/40 bg-success text-success-foreground' : 'border-input text-muted-foreground'}`}>
               Réalisée
             </button>
             <button type="button" onClick={() => setIssue('echoue')}
-              className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-medium ${issue === 'echoue' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-input text-muted-foreground'}`}>
+              className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-medium ${issue === 'echoue' ? 'border-destructive-foreground/40 bg-destructive text-destructive-foreground' : 'border-input text-muted-foreground'}`}>
               Échouée
             </button>
           </div>
@@ -254,7 +254,7 @@ function Carte({ intervention, demande, prestataireNom, clientNom, categorieLabe
       <p className="text-sm font-semibold">{categorieLabel}</p>
       <p className="text-xs text-muted-foreground">{prestataireNom} · {clientNom}</p>
       {demande && (
-        <p className={`flex items-center gap-1 text-xs ${slaEtat === 'retard' ? 'font-semibold text-destructive' : 'text-muted-foreground'}`}>
+        <p className={`flex items-center gap-1 text-xs ${slaEtat === 'retard' ? 'font-semibold text-destructive-foreground' : 'text-muted-foreground'}`}>
           {slaEtat === 'retard' ? <AlertTriangle className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
           {resteAvantDelai(demande.delai_cible)}
         </p>
@@ -341,13 +341,13 @@ export default function Interventions() {
           <h2 className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">Alertes SLA</h2>
           {alertes.enRetard.length > 0 && (
             <div>
-              <p className="mb-1.5 text-xs font-semibold text-destructive">En retard ({alertes.enRetard.length})</p>
+              <p className="mb-1.5 text-xs font-semibold text-destructive-foreground">En retard ({alertes.enRetard.length})</p>
               <div className="flex flex-wrap gap-2">
                 {alertes.enRetard.map((i) => {
                   const { demande } = contexte(i)
                   return (
                     <button key={i.id} type="button" onClick={() => setSelectedId(i.id)}
-                      className="rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1 text-xs text-destructive hover:bg-destructive/10">
+                      className="rounded-md border border-destructive-foreground/30 bg-destructive px-2.5 py-1 text-xs text-destructive-foreground hover:bg-destructive/80">
                       {catLabel.get(demande?.categorie_id ?? '') ?? i.id.slice(0, 8)} · {resteAvantDelai(demande?.delai_cible)}
                     </button>
                   )
@@ -363,7 +363,7 @@ export default function Interventions() {
                   const { demande } = contexte(i)
                   return (
                     <button key={i.id} type="button" onClick={() => setSelectedId(i.id)}
-                      className="rounded-md border border-warning/40 bg-warning/10 px-2.5 py-1 text-xs text-warning-foreground hover:bg-warning/20">
+                      className="rounded-md border border-warning-foreground/30 bg-warning px-2.5 py-1 text-xs text-warning-foreground hover:bg-warning/80">
                       {catLabel.get(demande?.categorie_id ?? '') ?? i.id.slice(0, 8)} · {resteAvantDelai(demande?.delai_cible)}
                     </button>
                   )

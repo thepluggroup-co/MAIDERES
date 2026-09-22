@@ -13,7 +13,7 @@ if (!supabaseAdmin) {
 }
 const db = supabaseAdmin!
 
-const DEMANDE_FIELDS = 'id, client_id, categorie_id, description, localisation, canal, statut, created_at, niveau_urgence, date_souhaitee, delai_cible'
+const DEMANDE_FIELDS = 'id, client_id, categorie_id, description, localisation, canal, statut, created_at, niveau_urgence, date_souhaitee, delai_cible, offre_id'
 
 // ── GET /api/demandes — liste, filtrée par rôle ───────────────────────────────
 demandesRouter.get('/', async (c) => {
@@ -102,6 +102,22 @@ demandesRouter.post('/', zValidator('json', CreateDemandeSchema), async (c) => {
     if (!clientId) throw new HTTPException(403, { message: "Aucune fiche client associée à ce compte" })
   }
 
+  // Offre choisie par le client sur la fiche publique d'un prestataire : la
+  // demande en garde la trace (offre_id = préférence exprimée), mais elle
+  // entre TOUJOURS d'abord dans l'ERP au statut 'nouvelle'. Aucun matching
+  // n'est créé ici et le prestataire n'est pas notifié : c'est le staff
+  // MAIDERES qui valide puis propose (cf. POST /api/matchings), ce qui
+  // maintient MAIDERES comme intermédiaire entre client et prestataire.
+  let offre: { id: string; prestataire_id: string; publie: boolean } | null = null
+  if (body.offre_id) {
+    const { data: offreRow, error: offreError } = await db
+      .from('offres').select('id, prestataire_id, publie').eq('id', body.offre_id).maybeSingle()
+    if (offreError) return c.json({ error: offreError.message }, 500)
+    if (!offreRow) throw new HTTPException(404, { message: 'Offre introuvable' })
+    offre = offreRow as { id: string; prestataire_id: string; publie: boolean }
+    if (!offre.publie) throw new HTTPException(422, { message: "Cette offre n'est plus publiée" })
+  }
+
   const { data, error } = await db
     .from('demandes')
     .insert({
@@ -113,11 +129,13 @@ demandesRouter.post('/', zValidator('json', CreateDemandeSchema), async (c) => {
       statut:       'nouvelle',
       niveau_urgence: body.niveau_urgence,
       date_souhaitee: body.date_souhaitee ?? null,
+      offre_id:     offre?.id ?? null,
     })
     .select(DEMANDE_FIELDS)
     .single()
 
   if (error) return c.json({ error: error.message }, 500)
+
   return c.json({ data }, 201)
 })
 
